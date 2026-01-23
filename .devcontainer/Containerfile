@@ -1,0 +1,17 @@
+FROM mcr.microsoft.com/devcontainers/base:debian
+
+# Switch to root only for system-level installations
+USER root
+
+# Install required packages
+RUN apt-get update && apt-get -y install --no-install-recommends \
+    wget \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+
+# Switch to vscode user for all subsequent operations
+USER vscode
+
+# Set working directory
+WORKDIR /workspace

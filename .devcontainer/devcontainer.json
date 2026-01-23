@@ -1,0 +1,28 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/java
+{
+    "name": "Sonar-App Container",
+    // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+    "build": {
+        "dockerfile": "Containerfile",
+        "context": "."
+    },
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "ms-python.autopep8",
+                "mongodb.mongodb-vscode"
+            ]
+        }
+    },
+    "features":{
+        "ghcr.io/stu-bell/devcontainer-features/node:0": {},
+        "ghcr.io/devcontainers-extra/features/fish-apt-get:1": {},
+        "ghcr.io/devcontainers-extra/features/starship:1": {}
+    },
+    "containerUser": "vscode",
+    "remoteUser": "vscode",
+    "postCreateCommand": "sudo sed -i -e 's/\r$//' .devcontainer/postCreateCommand.sh && bash ./.devcontainer/postCreateCommand.sh"
+}
