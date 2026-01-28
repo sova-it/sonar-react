@@ -118,8 +118,8 @@ const VolunteerDashboard = () => {
           });
           const normalizedSubevents = subevents.map((sub: any) => {
             const computeStatus = (item: any) => {
-              const startRaw = item.startTime ?? item.start_time;
-              const endRaw = item.endTime ?? item.end_time;
+              const startRaw = item.start_time ?? item.startTime;
+              const endRaw = item.end_time ?? item.endTime;
 
               if (!startRaw) return "upcoming";
 
@@ -147,8 +147,8 @@ const VolunteerDashboard = () => {
               sport: sub.sport || sub.title,
               start_time: sub.startTime || sub.start_time,
               end_time: sub.endTime || sub.end_time,
-              date: new Date(sub.startTime || sub.start_time).toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'}),
-              time: new Date(sub.startTime || sub.start_time).toLocaleTimeString('en-US', {hour: 'numeric', minute: 'numeric', hour12: true}),
+              date: new Date(sub.start_time || sub.startTime).toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'}),
+              time: new Date(sub.start_time || sub.startTime).toLocaleTimeString('en-US', {hour: 'numeric', minute: 'numeric', hour12: true}),
             };
           });
 

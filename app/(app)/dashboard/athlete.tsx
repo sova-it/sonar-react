@@ -83,8 +83,8 @@ const AthleteDashboard = () => {
 
         const normalizedEvents = events.map((ev: any) => {
           const computeStatus = (item: any) => {
-            const startRaw = item.startTime ?? item.start_time;
-            const endRaw = item.endTime ?? item.end_time;
+            const startRaw = item.start_time ?? item.startTime;
+            const endRaw = item.end_time ?? item.endTime;
 
             if (!startRaw) return "upcoming";
 
@@ -110,16 +110,16 @@ const AthleteDashboard = () => {
             image: ev.imageUrl || defaultImageUrl,
             status: computeStatus(ev),
             sport: ev.sport || ev.title,
-            start_time: ev.startTime || ev.start_time,
+            start_time: ev.start_time || ev.startTime,
             end_time: ev.endTime || ev.end_time,
-            date: new Date(ev.startTime || ev.start_time).toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'}),
-            time: new Date(ev.startTime || ev.start_time).toLocaleTimeString('en-US', {hour: 'numeric', minute: 'numeric', hour12: true}),
+            date: new Date(ev.start_time || ev.startTime).toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'}),
+            time: new Date(ev.start_time || ev.startTime).toLocaleTimeString('en-US', {hour: 'numeric', minute: 'numeric', hour12: true}),
           };
         });
         const normalizedSubevents = subevents.map((sub: any) => {
             const computeStatus = (item: any) => {
-              const startRaw = item.startTime ?? item.start_time;
-              const endRaw = item.endTime ?? item.end_time;
+              const startRaw = item.start_time ?? item.startTime;
+              const endRaw = item.end_time ?? item.endTime;
 
               if (!startRaw) return "upcoming";
 
@@ -145,10 +145,10 @@ const AthleteDashboard = () => {
               image: sub.imageUrl || defaultImageUrl,
               status: computeStatus(sub),
               sport: sub.sport || sub.title,
-              start_time: sub.startTime || sub.start_time,
+              start_time: sub.start_time || sub.startTime,
               end_time: sub.endTime || sub.end_time,
-              date: new Date(sub.startTime || sub.start_time).toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'}),
-              time: new Date(sub.startTime || sub.start_time).toLocaleTimeString('en-US', {hour: 'numeric', minute: 'numeric', hour12: true}),
+              date: new Date(sub.start_time || sub.startTime).toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'}),
+              time: new Date(sub.start_time || sub.startTime).toLocaleTimeString('en-US', {hour: 'numeric', minute: 'numeric', hour12: true}),
             };
           });
 
