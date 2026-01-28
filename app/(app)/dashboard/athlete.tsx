@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { router } from "expo-router";
 import { useAuth } from "../../../context/auth";
 
@@ -18,6 +18,7 @@ import {
   MaterialIcons,
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
+import axios from "axios";
 
 interface UpcomingEvent {
   id: number;
@@ -45,8 +46,8 @@ interface NavigationButton {
 }
 
 const AthleteDashboard = () => {
-  const { userData, isReady, role } = useAuth();
-
+  const { userData, isReady, role,userId } = useAuth();
+  const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   useEffect(() => {
     if (isReady && role !== "athlete") {
       router.replace("/login");
@@ -60,44 +61,110 @@ const AthleteDashboard = () => {
       </View>
     );
   }
-
-  const initials = `${userData?.first_name?.[0] ?? ""}${
-    userData?.last_name?.[0] ?? ""
-  }`.toUpperCase();
-
-  const upcomingEvents: UpcomingEvent[] = [
+  useEffect(() =>
     {
-      id: 1,
-      title: "Red Ball Singles Match",
-      date: "Friday, June 20",
-      time: "2:00 PM",
-      image: require("../../../assets/images/tennis.png"),
-      sport: "tennis",
-      start_time: "2025-06-20T14:00:00Z",
-      end_time: "2025-06-20T15:00:00Z",
-    },
-    {
-      id: 2,
-      title: "Green Dot Singles Match",
-      date: "Friday, June 20",
-      time: "3:30 PM",
-      image: require("../../../assets/images/tennis.png"),
-      sport: "tennis",
-      start_time: "2025-06-20T15:30:00Z",
-      end_time: "2025-06-20T16:30:00Z",
-    },
-    {
-      id: 3,
-      title: "Match Play Singles",
-      date: "Friday, June 20",
-      time: "5:00 PM",
-      image: require("../../../assets/images/tennis.png"),
-      sport: "tennis",
-      start_time: "2025-06-20T17:00:00Z",
-      end_time: "2025-06-20T18:30:00Z",
-    },
-  ];
+      const fetchEvents = async () => {
 
+        try {
+          const [response,response2] = await Promise.all([
+            axios.get("http://127.0.0.1:8000/users/" + userId + "/events"),
+            axios.get("http://127.0.0.1:8000/users/" + userId + "/subevents"),
+      ]);
+
+        console.log("Events response:", response.data);
+        console.log("Subevents response:", response2.data);
+
+        const defaultImageUrl = "https://api.builder.io/api/v1/image/assets/TEMP/d657c7793a39131a1442e864a26a553b086c478b?width=720";
+        const events = Array.isArray(response.data?.events) ? response.data.events : [];
+        const subevents = Array.isArray(response2.data?.subevents) ? response2.data.subevents : [];
+
+        console.log("Events count:", events.length);
+        console.log("Subevents count:", subevents.length);
+
+        const normalizedEvents = events.map((ev: any) => {
+          const computeStatus = (item: any) => {
+            const startRaw = item.startTime ?? item.start_time;
+            const endRaw = item.endTime ?? item.end_time;
+
+            if (!startRaw) return "upcoming";
+
+            const startTs = Date.parse(startRaw);
+            const endTs = endRaw ? Date.parse(endRaw) : NaN;
+            const now = Date.now();
+
+            if (isNaN(startTs)) return "upcoming";
+
+            if (!isNaN(endTs)) {
+                if (now < startTs) return "upcoming";
+                if (now > endTs) return "completed";
+                return "ongoing";
+              }
+
+              return startTs < now ? "completed" : "upcoming";
+            };
+
+          return {
+            ...ev,
+            id: String(ev._id || ev.id),
+            title: ev.title,
+            image: ev.imageUrl || defaultImageUrl,
+            status: computeStatus(ev),
+            sport: ev.sport || ev.title,
+            start_time: ev.startTime || ev.start_time,
+            end_time: ev.endTime || ev.end_time,
+            date: new Date(ev.startTime || ev.start_time).toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'}),
+            time: new Date(ev.startTime || ev.start_time).toLocaleTimeString('en-US', {hour: 'numeric', minute: 'numeric', hour12: true}),
+          };
+        });
+        const normalizedSubevents = subevents.map((sub: any) => {
+            const computeStatus = (item: any) => {
+              const startRaw = item.startTime ?? item.start_time;
+              const endRaw = item.endTime ?? item.end_time;
+
+              if (!startRaw) return "upcoming";
+
+              const startTs = Date.parse(startRaw);
+              const endTs = endRaw ? Date.parse(endRaw) : NaN;
+              const now = Date.now();
+
+              if (isNaN(startTs)) return "upcoming";
+
+              if (!isNaN(endTs)) {
+                  if (now < startTs) return "upcoming";
+                  if (now > endTs) return "completed";
+                  return "ongoing";
+                }
+
+                return startTs < now ? "completed" : "upcoming";
+            };
+
+            return {
+              ...sub,
+              id: String(sub._id || sub.id),
+              title: sub.title,
+              image: sub.imageUrl || defaultImageUrl,
+              status: computeStatus(sub),
+              sport: sub.sport || sub.title,
+              start_time: sub.startTime || sub.start_time,
+              end_time: sub.endTime || sub.end_time,
+              date: new Date(sub.startTime || sub.start_time).toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'}),
+              time: new Date(sub.startTime || sub.start_time).toLocaleTimeString('en-US', {hour: 'numeric', minute: 'numeric', hour12: true}),
+            };
+          });
+
+        const combined = [...normalizedEvents, ...normalizedSubevents];
+        const upcomingOnly: UpcomingEvent[] = combined.filter((ev:any) => (ev.status ?? "").toLowerCase() === "upcoming");
+        setUpcomingEvents(upcomingOnly);
+        console.log("Upcoming:" + combined);
+        } catch (err) {
+          console.error("Error fetching events:", err);
+        }
+      };
+
+      fetchEvents();
+    }, [userId]
+  );
+  const initials = `${userData?.first_name?.[0] ?? ""}${userData?.last_name?.[0] ?? ""}`.toUpperCase();
   const openDetails = (e: UpcomingEvent) => {
     router.push({
       pathname: "/(app)/dashboard/event-details",
@@ -238,13 +305,20 @@ const AthleteDashboard = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Your upcoming events</Text>
           <View style={styles.eventsContainer}>
-            {upcomingEvents.map((event) => (
+            {upcomingEvents.length === 0 ? (
+              <View style={styles.noEventsContainer}>
+                <Ionicons name="calendar-outline" size={48} color="#999" />
+                <Text style={styles.noEventsText}>No upcoming events</Text>
+              </View>
+              ) : (
+              upcomingEvents.map((event) => (
               <EventCard
                 key={event.id}
                 event={event}
                 onPress={() => openDetails(event)}
               />
-            ))}
+            ))
+          )}
           </View>
         </View>
 
@@ -580,6 +654,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     letterSpacing: 0.5,
+  },
+  noEventsContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 40,
+    marginTop: 8,
+  },
+  noEventsText: {
+    fontSize: 16,
+    color: "#666",
+    marginTop: 12,
   },
 });
 
