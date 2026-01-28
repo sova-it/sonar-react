@@ -125,6 +125,7 @@ export default function EventDetails() {
         <View style={styles.titleRow}>
           <View style={{ flex: 1, paddingRight: 12 }}>
             <Text style={styles.title}>{title || "Event"}</Text>
+            {/*(userData?.role ?? "").toLowerCase() !== "athlete" && (
             <TouchableOpacity
               onPress={() => router.push(`/(app)/dashboard/QRScanner?subevent_id=${id}`)}
               style={{ marginTop: 8, alignSelf: "flex-start" }}
@@ -132,6 +133,7 @@ export default function EventDetails() {
             >
               <MaterialIcons name="qr-code-scanner" size={28} color="#A22723" />
             </TouchableOpacity>
+            )*/}
           </View>
           {"image" in conf ? (
             <Image source={conf.image} style={{ width: 110, height: 125, resizeMode: "contain" }} />

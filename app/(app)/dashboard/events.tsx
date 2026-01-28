@@ -13,7 +13,7 @@ import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuth } from "../../../context/auth";
 import axios from "axios";
 
-const statuses = ["all", "ongoing", "upcoming", "completed", "my_events"];
+const statuses = ["all", "ongoing", "upcoming", "completed"];
 const categories = ["All Sports", "Athletics", "Bowling", "Swimming", "Tennis"];
 
 const EventScreen = () => {
