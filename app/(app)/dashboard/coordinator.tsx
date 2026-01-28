@@ -145,7 +145,7 @@ const CoordinatorDashboard = () => {
       icon: "emoji-events",
       localImage: require("../../../assets/images/results.png"), 
       label: "Results",
-      onPress: () => console.log("Results pressed"),
+      onPress: () => router.push("/(app)/results/event-selection" as any),
     },
   ];
 
