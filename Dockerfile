@@ -1,23 +1,20 @@
-# Stage 1: Build Expo Web App
-FROM node:lts-slim AS build
+FROM node:lts-slim
 
 WORKDIR /app
+
 COPY package*.json ./
 RUN npm install
 
 COPY . .
 
-# Build Expo web version
+# Build static files for production
 RUN npm run build:web
 
-
-# Stage 2: Serve with Nginx
-FROM nginx:alpine
-
-# Copy Expo web build output into Nginx
-COPY --from=build /app/dist /usr/share/nginx/html
+# Install serve to host the static files
+RUN npm install -g serve
 
 # Azure requires port 80
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+# Serve the pre-built static files
+CMD ["serve", "-s", "dist", "-l", "80"]
