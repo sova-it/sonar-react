@@ -32,3 +32,4 @@ RUN apk add --no-cache curl
 ARG API_HOST=localhost
 ENV API_HOST=${API_HOST}
 
+CMD ["nginx", "-g", "daemon off;"]
