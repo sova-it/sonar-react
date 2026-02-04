@@ -1,26 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
-  SafeAreaView,
-  ActivityIndicator,
-  TextInput,
-} from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useAuth } from '@/context/auth';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { useAuth } from '@/context/auth';
-import { Athlete, Score, ScoreEntry, EntryMode } from '../../../../types/results';
-import { validateTrackScore, formatTime } from '../../../../utils/scoreValidation';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
+import { Athlete, EntryMode, Score, ScoreEntry } from '../../../../types/results';
 import { calculateTrackRankings } from '../../../../utils/rankingCalculation';
-import ScoreInput from '../components/ScoreInput';
+import { formatTime, validateTrackScore } from '../../../../utils/scoreValidation';
 import AthleteSearchBar from '../components/AthleteSearchBar';
 import ConfirmationDialog from '../components/ConfirmationDialog';
+import ScoreInput from '../components/ScoreInput';
 import Toast, { ToastType } from '../components/Toast';
 
 
@@ -80,7 +80,7 @@ const TrackFieldEntryScreen = () => {
   useEffect(() => {
     const loadAthletes = async () => {
       try {
-        const endpoint = "http://127.0.0.1:8000/subevents/"+subeventId+"/participants";
+        const endpoint = "/api/subevents/"+subeventId+"/participants";
         const response = await axios.get(endpoint);
         let participants: Athlete[] = (response.data.items || []).map((item: any) => ({
           _id: item.memberId,
@@ -126,7 +126,7 @@ const TrackFieldEntryScreen = () => {
   const loadScores = async () => {
     try {
       setRankingsLoading(true);
-      const response = await axios.get('http://127.0.0.1:8000/scores');
+      const response = await axios.get('/api/scores');
       const eventScores = response.data.scores.filter(
         (s: Score) => s.subevent_id === subeventId
       );
@@ -166,7 +166,7 @@ const TrackFieldEntryScreen = () => {
     setSubmitting(true);
 
     try {
-      await axios.post('http://127.0.0.1:8000/scores/athlete', {
+      await axios.post('/api/scores/athlete', {
         athlete_id: selectedAthlete!._id,
         subevent_id: subeventId,
         score: formatTime(timeValue.minutes, timeValue.seconds, timeValue.milliseconds),
@@ -254,7 +254,7 @@ const TrackFieldEntryScreen = () => {
 
     try {
       const promises = bulkValidEntries.map((entry) =>
-        axios.post('http://127.0.0.1:8000/scores/athlete', {
+        axios.post('/api/scores/athlete', {
           athlete_id: entry.athlete_id,
           subevent_id: subeventId,
           score: formatTime(entry.minutes, entry.seconds, entry.milliseconds),

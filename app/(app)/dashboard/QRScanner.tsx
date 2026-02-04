@@ -1,14 +1,14 @@
+import { Ionicons } from "@expo/vector-icons";
+import { CameraView, useCameraPermissions } from "expo-camera";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  ActivityIndicator,
+    ActivityIndicator,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
-import { CameraView, useCameraPermissions } from "expo-camera";
-import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "../../../context/auth";
 
 type Phase = "idle" | "loading" | "confirm" | "error";
@@ -39,8 +39,8 @@ export default function QrScannerScreen() {
 
       const isSubevent = !!subevent_id;
       const endpoint = isSubevent
-        ? "http://127.0.0.1:8000/checkins/subevent"
-        : "http://127.0.0.1:8000/checkins/event";
+        ? "/api/checkins/subevent"
+        : "/api/checkins/event";
 
       const body = {
         type_id: isSubevent ? "subevent" : "event",

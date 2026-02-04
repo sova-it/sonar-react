@@ -1,20 +1,20 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  TextInput,
-  StyleSheet,
-  StatusBar,
-  SafeAreaView,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
-import { router } from 'expo-router';
+import { useAuth } from '@/context/auth';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
-import { useAuth } from '@/context/auth';
+import { router } from 'expo-router';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from 'react-native';
 import { SportContext } from '../../../types/results';
 
 interface Subevent {
@@ -44,7 +44,7 @@ const EventSelectionScreen = () => {
     const fetchSubevents = async () => {
       try {
         setLoading(true);
-        const subeventsRes = await axios.get('http://127.0.0.1:8000/subevents');
+        const subeventsRes = await axios.get('/api/subevents');
 
         const subevents = (subeventsRes.data.subevents || []).map((s: any) => ({
           ...s,

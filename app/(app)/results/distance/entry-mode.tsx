@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
-  SafeAreaView,
-  ActivityIndicator,
-  TextInput,
-  useWindowDimensions,
-} from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useAuth } from '@/context/auth';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import { useAuth } from '@/context/auth';
-import { Athlete, Score, EntryMode } from '../../../../types/results';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    useWindowDimensions,
+    View,
+} from 'react-native';
+import { Athlete, EntryMode, Score } from '../../../../types/results';
 import AthleteSearchBar from '../components/AthleteSearchBar';
 import ConfirmationDialog from '../components/ConfirmationDialog';
 import Toast, { ToastType } from '../components/Toast';
@@ -84,7 +84,7 @@ const DistanceEntryScreen = () => {
   useEffect(() => {
     const loadAthletes = async () => {
       try {
-        const endpoint = "http://127.0.0.1:8000/subevents/"+subeventId+"/participants";
+        const endpoint = "/api/subevents/"+subeventId+"/participants";
         const response = await axios.get(endpoint);
         let participants: Athlete[] = (response.data.items || []).map((item: any) => ({
           _id: item.memberId,
@@ -131,7 +131,7 @@ const DistanceEntryScreen = () => {
   const loadScores = async () => {
     try {
       setRankingsLoading(true);
-      const response = await axios.get('http://127.0.0.1:8000/scores');
+      const response = await axios.get('/api/scores');
       const eventScores = response.data.scores.filter(
         (s: Score) => s.subevent_id === subeventId
       );
@@ -207,7 +207,7 @@ const DistanceEntryScreen = () => {
     setSubmitting(true);
 
     try {
-      await axios.post('http://127.0.0.1:8000/scores/athlete', {
+      await axios.post('/api/scores/athlete', {
         athlete_id: selectedAthlete!._id,
         subevent_id: subeventId,
         score: formatDistance(distanceValue.meters, distanceValue.centimeters),
@@ -290,7 +290,7 @@ const DistanceEntryScreen = () => {
 
     try {
       const promises = bulkValidEntries.map((entry) =>
-        axios.post('http://127.0.0.1:8000/scores/athlete', {
+        axios.post('/api/scores/athlete', {
           athlete_id: entry.athlete_id,
           subevent_id: subeventId,
           score: formatDistance(entry.meters, entry.centimeters),

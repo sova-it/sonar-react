@@ -1,7 +1,7 @@
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from "react-native";
-import React, { useState } from "react";
 import axios from "axios";
 import { router } from "expo-router";
+import React, { useState } from "react";
+import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../../context/auth"; // make sure this path is correct
 
 export default function LoginScreen() {
@@ -17,7 +17,7 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
-      const res = await axios.post("http://127.0.0.1:8000/login", {
+      const res = await axios.post("/api/login", {
         email: email.trim(),
         password,
       });
@@ -25,7 +25,7 @@ export default function LoginScreen() {
       const { user_id, role } = res.data;
 
       // Fetch full user info
-      const userRes = await axios.get(`http://127.0.0.1:8000/users/${user_id}`);
+      const userRes = await axios.get(`/api/users/${user_id}`);
       const userData = userRes.data.user;
 
       await setAuth({ role, userId: user_id, userData });
