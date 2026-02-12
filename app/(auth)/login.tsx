@@ -3,19 +3,28 @@ import { router } from "expo-router";
 import React, { useState } from "react";
 import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useAuth } from "../../context/auth"; // make sure this path is correct
-
+import Toast, { ToastType } from "../(app)/results/components/Toast";
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
+  //Toast props
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastType, setToastType] = useState<ToastType>("success");
+  const [toastDuration, setToastDuration] = useState(3000);
   const { setAuth } = useAuth(); // 👈 get setRole from context
-
+  const showToast = (message: string, type: ToastType, duration?: number) => {
+      setToastMessage(message);
+      setToastType(type);
+      setToastVisible(true);
+      setToastDuration(duration || 3000);
+    };
   const handleLogin = async () => {
     setError("");
     setLoading(true);
-
+    
     try {
       const res = await api.post("/login", {
         email: email.trim(),
@@ -32,7 +41,24 @@ export default function LoginScreen() {
 
       router.replace("/dashboard");
     } catch (err: any) {
-      setError(err?.response?.data?.detail || "Login failed. Please try again.");
+      switch (err?.response?.status){
+        case 401:
+          showToast("Error: Wrong username/password", "error")
+          break;
+        case 500:
+          showToast("Error: The website has encountered an error", "error")
+          break;
+        case 403:
+          showToast("Error: Account locked or disabled", "error")
+          break;
+        case 408:
+        case 504:
+          showToast("Error: Request timed out. Please try again", "error")
+          break;
+        case 503:
+          showToast("Error: Service temporarily unavailable. Please try again later.","error")
+          break
+      }
     } finally {
       setLoading(false);
     }
@@ -40,6 +66,7 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
+      <Toast visible={toastVisible} message={toastMessage} type={toastType} onHide={() => setToastVisible(false)} duration={toastDuration} />
       <Image source={require("../../assets/images/logo.png")} style={styles.logo} resizeMode="contain" />
       <Text style={styles.title}>Sign in</Text>
       <TextInput
