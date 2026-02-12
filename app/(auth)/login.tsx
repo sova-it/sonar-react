@@ -1,4 +1,4 @@
-import axios from "axios";
+import api from "@/lib/api";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
@@ -17,7 +17,7 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
-      const res = await axios.post("/api/login", {
+      const res = await api.post("/login", {
         email: email.trim(),
         password,
       });
@@ -25,7 +25,7 @@ export default function LoginScreen() {
       const { user_id, role } = res.data;
 
       // Fetch full user info
-      const userRes = await axios.get(`/api/users/${user_id}`);
+      const userRes = await api.get(`/users/${user_id}`);
       const userData = userRes.data.user;
 
       await setAuth({ role, userId: user_id, userData });
