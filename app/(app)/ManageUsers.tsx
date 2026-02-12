@@ -1,5 +1,5 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
-import axios from "axios";
+import api from "@/lib/api";
 import { router } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -41,7 +41,7 @@ const UserManagerScreen = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("/api/users");
+      const res = await api.get("/users");
         setUsers(res.data.users || []);
     } catch (err) {
       console.error("Failed to fetch users", err);

@@ -1,7 +1,7 @@
 import { useAuth } from '@/context/auth';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
+import api from '@/lib/api';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
@@ -80,8 +80,8 @@ const TrackFieldEntryScreen = () => {
   useEffect(() => {
     const loadAthletes = async () => {
       try {
-        const endpoint = "/api/subevents/"+subeventId+"/participants";
-        const response = await axios.get(endpoint);
+        const endpoint = "/subevents/"+subeventId+"/participants";
+        const response = await api.get(endpoint);
         let participants: Athlete[] = (response.data.items || []).map((item: any) => ({
           _id: item.memberId,
           first_name: item.firstName,
@@ -126,7 +126,7 @@ const TrackFieldEntryScreen = () => {
   const loadScores = async () => {
     try {
       setRankingsLoading(true);
-      const response = await axios.get('/api/scores');
+      const response = await api.get('/scores');
       const eventScores = response.data.scores.filter(
         (s: Score) => s.subevent_id === subeventId
       );
@@ -166,7 +166,7 @@ const TrackFieldEntryScreen = () => {
     setSubmitting(true);
 
     try {
-      await axios.post('/api/scores/athlete', {
+      await api.post('/scores/athlete', {
         athlete_id: selectedAthlete!._id,
         subevent_id: subeventId,
         score: formatTime(timeValue.minutes, timeValue.seconds, timeValue.milliseconds),
@@ -254,7 +254,7 @@ const TrackFieldEntryScreen = () => {
 
     try {
       const promises = bulkValidEntries.map((entry) =>
-        axios.post('/api/scores/athlete', {
+        api.post('/scores/athlete', {
           athlete_id: entry.athlete_id,
           subevent_id: subeventId,
           score: formatTime(entry.minutes, entry.seconds, entry.milliseconds),

@@ -1,5 +1,5 @@
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import axios from "axios";
+import api from "@/lib/api";
 import { router } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
@@ -28,8 +28,8 @@ const EventScreen = () => {
   useEffect(() => {
     const fetchUserEvents = async () => {
       try {
-        const response = await axios.get(
-          "/api/users/" + userId + "/events"
+        const response = await api.get(
+          "/users/" + userId + "/events"
         );
         const defaultImageUrl = "https://api.builder.io/api/v1/image/assets/TEMP/d657c7793a39131a1442e864a26a553b086c478b?width=720";
         const list = Array.isArray(response.data?.events) ? response.data.events : [];
@@ -47,8 +47,8 @@ const EventScreen = () => {
     const fetchAllEvents = async () => {
       try {
         const [response, response2] = await Promise.all([
-        axios.get("/api/events"),
-        axios.get("/api/subevents"),
+        api.get("/events"),
+        api.get("/subevents"),
       ]);
         const getSportCategory = (event: any) => {
         const matchedCategory = categories.find(

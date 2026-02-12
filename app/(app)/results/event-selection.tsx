@@ -1,6 +1,6 @@
 import { useAuth } from '@/context/auth';
 import { Ionicons } from '@expo/vector-icons';
-import axios from 'axios';
+import api from '@/lib/api';
 import { router } from 'expo-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
@@ -44,7 +44,7 @@ const EventSelectionScreen = () => {
     const fetchSubevents = async () => {
       try {
         setLoading(true);
-        const subeventsRes = await axios.get('/api/subevents');
+        const subeventsRes = await api.get('/subevents');
 
         const subevents = (subeventsRes.data.subevents || []).map((s: any) => ({
           ...s,
