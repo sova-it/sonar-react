@@ -1,22 +1,20 @@
-import React, { useMemo, useState, useEffect } from "react";
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Image, 
-  SafeAreaView, 
-  StatusBar, 
-  Dimensions,
-  Pressable, 
-  ScrollView, 
-  FlatList,
-  ImageSourcePropType 
+import { Ionicons, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons";
+import api from "@/lib/api";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+    FlatList,
+    Image,
+    ImageSourcePropType,
+    SafeAreaView,
+    ScrollView,
+    StatusBar,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View
 } from "react-native";
-import { useLocalSearchParams, router } from "expo-router";
-import { Ionicons, MaterialIcons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
 import { useAuth } from "../../../context/auth";
-import axios from "axios";
 type SportConf =
   | { label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap; image?: never }
   | { label: string; image: ImageSourcePropType; icon?: never };
@@ -52,13 +50,13 @@ export default function EventDetails() {
   useEffect(() => {
     const fetchParticipants = async () => {
       try {
-        const response = await axios.get('http://127.0.0.1:8000/subevents/' + id + '/participants');
+        const response = await api.get('/subevents/' + id + '/participants');
         
         setParticipants(response.data.items||[])
       } catch(error:any){
         if (error.response && error.response.status === 404) {
             try{
-              const response2 = await axios.get('http://127.0.0.1:8000/events/' + id + '/participants');
+              const response2 = await api.get('/events/' + id + '/participants');
               setParticipants(response2.data.items||[]);
             }catch(error2){
               console.log(error2);

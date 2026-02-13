@@ -1,21 +1,21 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { Feather, Ionicons } from "@expo/vector-icons";
+import api from "@/lib/api";
 import { router } from "expo-router";
+import React, { useEffect, useMemo, useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  Dimensions,
+  FlatList,
+  Image,
+  Modal,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
-  Image,
-  StyleSheet,
-  FlatList,
-  ActivityIndicator,
-  Dimensions,
-  Modal,
+  View,
 } from "react-native";
 import { useAuth } from "../../context/auth";
-import { Feather, Ionicons } from "@expo/vector-icons";
-import axios from "axios";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -41,7 +41,7 @@ const UserManagerScreen = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get("http://127.0.0.1:8000/users");
+      const res = await api.get("/users");
         setUsers(res.data.users || []);
     } catch (err) {
       console.error("Failed to fetch users", err);

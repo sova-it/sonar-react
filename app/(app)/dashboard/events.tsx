@@ -1,17 +1,17 @@
-import React, { useState, useMemo, useEffect } from "react";
+import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import api from "@/lib/api";
 import { router } from "expo-router";
+import React, { useEffect, useMemo, useState } from "react";
 import {
-  View,
-  Text,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
+    Image,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
-import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuth } from "../../../context/auth";
-import axios from "axios";
 
 const statuses = ["all", "ongoing", "upcoming", "completed"];
 const categories = ["All Sports", "Athletics", "Bowling", "Swimming", "Tennis"];
@@ -49,8 +49,8 @@ const EventScreen = () => {
   useEffect(() => {
     const fetchUserEvents = async () => {
       try {
-        const response = await axios.get(
-          "http://127.0.0.1:8000/users/" + userId + "/events"
+        const response = await api.get(
+          "/users/" + userId + "/events"
         );
         const defaultImageUrl = "https://api.builder.io/api/v1/image/assets/TEMP/d657c7793a39131a1442e864a26a553b086c478b?width=720";
         const list = Array.isArray(response.data?.events) ? response.data.events : [];
@@ -68,8 +68,8 @@ const EventScreen = () => {
     const fetchAllEvents = async () => {
       try {
         const [response, response2] = await Promise.all([
-        axios.get("http://127.0.0.1:8000/events"),
-        axios.get("http://127.0.0.1:8000/subevents"),
+        api.get("/events"),
+        api.get("/subevents"),
       ]);
         const getSportCategory = (event: any) => {
         const matchedCategory = categories.find(
