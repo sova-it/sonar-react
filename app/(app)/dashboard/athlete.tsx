@@ -181,14 +181,14 @@ const AthleteDashboard = () => {
   const actionButtons: ActionButton[] = [];
 
   const navigationButtons: NavigationButton[] = [
-    /*
+    
     {
       icon: "map",
       localImage: require("../../../assets/images/map.png"),
       label: "Map",
       onPress: () => console.log("Map pressed"),
     },
-    */
+    
     {
       icon: "emoji-events",
       localImage: require("../../../assets/images/results.png"),

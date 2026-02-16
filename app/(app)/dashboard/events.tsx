@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { useAuth } from "../../../context/auth";
 
-const statuses = ["all", "ongoing", "upcoming", "completed"];
+const statuses = ["all", "ongoing", "upcoming", "completed","my_events"];
 const categories = ["All Sports", "Athletics", "Bowling", "Swimming", "Tennis"];
 
 const computeStatus = (item: any): string => {

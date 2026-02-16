@@ -67,14 +67,14 @@ const ProfileScreen = () => {
           </Text>
           <Text style={styles.memberId}>Member ID: {userData.member_id}</Text>
         </View>
-      {/*<View style = {styles.qrcode}>
+      {<View style = {styles.qrcode}>
         <QRCode
           value={userId??"null"}
           size={200}
           color="#000000ff"
           backgroundColor="#fff"
         />
-      </View>*/}
+      </View>}
         <Text style={styles.sectionTitle}>Personal Information</Text>
         {renderField("First Name", userData.first_name)}
         {renderField("Last Name", userData.last_name)}

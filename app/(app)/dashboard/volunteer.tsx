@@ -178,7 +178,7 @@ const VolunteerDashboard = () => {
   };
 
   const actionButtons: ActionButton[] = [
-    /*{
+    {
       icon: "checkmark-circle-outline",
       localImage: require("../../../assets/images/checkin.svg"),
       label: "Check-in",
@@ -189,16 +189,16 @@ const VolunteerDashboard = () => {
       localImage: require("../../../assets/images/map.png"),
       label: "Map",
       onPress: () => console.log("Map pressed"),
-    },*/
+    },
   ];
 
   const navigationButtons: NavigationButton[] = [
-    /*{
+    {
       icon: "qr-code-scanner",
       localImage: require("../../../assets/images/qr.png"),
       label: "QR Code Scanner",
       onPress: () => console.log("QR Code Scanner pressed"),
-    },*/
+    },
     {
       icon: "emoji-events",
       localImage: require("../../../assets/images/results.png"),
@@ -262,7 +262,7 @@ const VolunteerDashboard = () => {
         showsVerticalScrollIndicator={false}
       >
         
-        {/* Action Buttons }
+        {/* Action Buttons */}
         <View style={styles.section}>
           <View style={styles.buttonGrid}>
             {actionButtons.map((button, index) => (
@@ -284,7 +284,7 @@ const VolunteerDashboard = () => {
               </TouchableOpacity>
             ))}
           </View>
-        </View>*/}
+        </View>
 
         {/* Navigation Buttons */}
         <View style={styles.section}>
