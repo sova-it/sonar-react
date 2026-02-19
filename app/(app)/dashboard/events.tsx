@@ -13,8 +13,29 @@ import {
 } from "react-native";
 import { useAuth } from "../../../context/auth";
 
-const statuses = ["all", "ongoing", "upcoming", "completed", "my_events"];
+const statuses = ["all", "ongoing", "upcoming", "completed","my_events"];
 const categories = ["All Sports", "Athletics", "Bowling", "Swimming", "Tennis"];
+
+const computeStatus = (item: any): string => {
+  const startRaw = item.start_time ?? item.startTime;
+  const endRaw = item.end_time ?? item.endTime;
+
+  if (!startRaw) return "upcoming";
+
+  const startTs = Date.parse(startRaw);
+  const endTs = endRaw ? Date.parse(endRaw) : NaN;
+  const now = Date.now();
+
+  if (isNaN(startTs)) return "upcoming";
+
+  if (!isNaN(endTs)) {
+    if (now < startTs) return "upcoming";
+    if (now > endTs) return "completed";
+    return "ongoing";
+  }
+
+  return startTs < now ? "completed" : "upcoming";
+};
 
 const EventScreen = () => {
   const { userId } = useAuth();
@@ -34,7 +55,7 @@ const EventScreen = () => {
         const defaultImageUrl = "https://api.builder.io/api/v1/image/assets/TEMP/d657c7793a39131a1442e864a26a553b086c478b?width=720";
         const list = Array.isArray(response.data?.events) ? response.data.events : [];
         setEventData(
-          list.map((ev: any) => ({ ...ev, id: String(ev.id ?? ev._id),imageUrl:ev.imageUrl||defaultImageUrl,sportCategory: ev.sportCategory||"General" }))
+          list.map((ev: any) => ({ ...ev, id: String(ev.id ?? ev._id),imageUrl:ev.imageUrl||defaultImageUrl,sportCategory: ev.sportCategory||"General", status: computeStatus(ev) }))
         );
       } catch (error) {
         console.error(error);
@@ -55,35 +76,36 @@ const EventScreen = () => {
           cat => cat.toLowerCase() === event.title?.toLowerCase()
         );
         
-        // Return matched category, existing sportCategory, or default
+        // Return matched category, existing, or default
         return matchedCategory || event.sportCategory || "Athletics";
       };
         const defaultImageUrl = "https://api.builder.io/api/v1/image/assets/TEMP/d657c7793a39131a1442e864a26a553b086c478b?width=720";
         const events = Array.isArray(response.data?.events) ? response.data.events : [];
         const subevents = Array.isArray(response2.data?.subevents) ? response2.data.subevents : [];
-      
+        console.log("Raw Events:", JSON.stringify(events[2], null, 2));
+        console.log(computeStatus(events[2]));
         const normalizedEvents = events.map((ev: any) => ({
         ...ev,
         id: String(ev._id || ev.id),
         title: ev.title,
         imageUrl: ev.imageUrl || defaultImageUrl,
         sportCategory: getSportCategory(ev),
-        status: ev.status || "UPCOMING",
+        status: computeStatus(ev),
         sport: ev.sport || ev.title,
         participants: ev.participants || 0,
-        startTime: ev.startTime || ev.start_time,
+        startTime: ev.start_time || ev.startTime,
       }));
-      
+
       const normalizedSubevents = subevents.map((ev: any) => ({
         ...ev,
         id: String(ev._id || ev.id),
         title: ev.title,
         imageUrl: ev.imageUrl || defaultImageUrl,
         sportCategory: getSportCategory(ev),
-        status: ev.status || "UPCOMING",
+        status: computeStatus(ev),
         sport: ev.sport || ev.title,
         participants: ev.participants || 0,
-        startTime: ev.startTime || ev.start_time,
+        startTime: ev.start_time || ev.startTime,
       }));
       
       const combined = [...normalizedEvents, ...normalizedSubevents];
@@ -106,7 +128,7 @@ const EventScreen = () => {
     }
     if (activeStatus !== "all" && activeStatus !== "my_events") {
       filtered = filtered.filter(
-        (e) => e.status === activeStatus.toUpperCase()
+        (e) => e.status?.toLowerCase() === activeStatus.toLowerCase()
       );
     }
     if (searchQuery) {
@@ -259,7 +281,7 @@ const EventScreen = () => {
                         style={{ marginRight: 6 }}
                       />
                       <Text style={{ color: "green", fontSize: 12 }}>
-                        {event.status}
+                        {event.status.toUpperCase()}
                       </Text>
                     </View>
                   </View>
