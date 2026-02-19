@@ -5,11 +5,11 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   withSequence,
-  runOnJS,
+  runOnJS
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 
-export type ToastType = 'success' | 'error';
+export type ToastType = 'success' | 'error' | 'login';
 
 interface ToastProps {
   visible: boolean;
@@ -51,16 +51,29 @@ const Toast: React.FC<ToastProps> = ({
   }));
 
   if (!visible) return null;
+  let backgroundColor;
+  let iconName : 'close-circle' | 'checkmark-circle';
+  let textColor:string;
+  if (type === 'login'){
+    backgroundColor = '#FFFFFF';
+    iconName = 'close-circle';
+    textColor = '#C4161C';
+  }else if (type === 'error') {
+    backgroundColor = '#C4161C';
+    iconName = 'close-circle';
+    textColor = '#FFFFFF';
+  }else {
+    backgroundColor = '#4CAF50';
+    iconName = 'checkmark-circle';
+    textColor = '#FFFFFF';
+  }
 
-  const isSuccess = type === 'success';
-  const backgroundColor = isSuccess ? '#4CAF50' : '#C4161C';
-  const iconName = isSuccess ? 'checkmark-circle' : 'close-circle';
-
+  
   return (
     <Animated.View style={[styles.container, animatedStyle, { backgroundColor }]}>
       <View style={styles.content}>
-        <Ionicons name={iconName} size={24} color="#FFFFFF" />
-        <Text style={styles.message}>{message}</Text>
+        <Ionicons name={iconName} size={24} color = {textColor} />
+        <Text style={[styles.message, { color: textColor }]}>{message}</Text>
       </View>
     </Animated.View>
   );
@@ -88,7 +101,6 @@ const styles = StyleSheet.create({
   },
   message: {
     flex: 1,
-    color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '600',
   },

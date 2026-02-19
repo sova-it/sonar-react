@@ -43,20 +43,20 @@ export default function LoginScreen() {
     } catch (err: any) {
       switch (err?.response?.status){
         case 401:
-          showToast("Error: Wrong username/password", "error")
+          showToast("Error: Wrong username/password", "login")
           break;
         case 500:
-          showToast("Error: The website has encountered an error", "error")
+          showToast("Error: The website has encountered an error", "login")
           break;
         case 403:
-          showToast("Error: Account locked or disabled", "error")
+          showToast("Error: Account locked or disabled", "login")
           break;
         case 408:
         case 504:
-          showToast("Error: Request timed out. Please try again", "error")
+          showToast("Error: Request timed out. Please try again", "login")
           break;
         case 503:
-          showToast("Error: Service temporarily unavailable. Please try again later.","error")
+          showToast("Error: Service temporarily unavailable. Please try again later.","login")
           break
       }
     } finally {
