@@ -1,9 +1,17 @@
 import api from "@/lib/api";
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
-import { Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { useAuth } from "../../context/auth"; // make sure this path is correct
+import {
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import Toast, { ToastType } from "../(app)/results/components/Toast";
+import { useAuth } from "../../context/auth"; // make sure this path is correct
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -16,15 +24,15 @@ export default function LoginScreen() {
   const [toastDuration, setToastDuration] = useState(3000);
   const { setAuth } = useAuth(); // 👈 get setRole from context
   const showToast = (message: string, type: ToastType, duration?: number) => {
-      setToastMessage(message);
-      setToastType(type);
-      setToastVisible(true);
-      setToastDuration(duration || 3000);
-    };
+    setToastMessage(message);
+    setToastType(type);
+    setToastVisible(true);
+    setToastDuration(duration || 3000);
+  };
   const handleLogin = async () => {
     setError("");
     setLoading(true);
-    
+
     try {
       const res = await api.post("/login", {
         email: email.trim(),
@@ -41,23 +49,26 @@ export default function LoginScreen() {
 
       router.replace("/dashboard");
     } catch (err: any) {
-      switch (err?.response?.status){
+      switch (err?.response?.status) {
         case 401:
-          showToast("Error: Wrong username/password", "login")
+          showToast("Error: Wrong username/password", "login");
           break;
         case 500:
-          showToast("Error: The website has encountered an error", "login")
+          showToast("Error: The website has encountered an error", "login");
           break;
         case 403:
-          showToast("Error: Account locked or disabled", "login")
+          showToast("Error: Account locked or disabled", "login");
           break;
         case 408:
         case 504:
-          showToast("Error: Request timed out. Please try again", "login")
+          showToast("Error: Request timed out. Please try again", "login");
           break;
         case 503:
-          showToast("Error: Service temporarily unavailable. Please try again later.","login")
-          break
+          showToast(
+            "Error: Service temporarily unavailable. Please try again later.",
+            "login",
+          );
+          break;
       }
     } finally {
       setLoading(false);
@@ -66,8 +77,23 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Toast visible={toastVisible} message={toastMessage} type={toastType} onHide={() => setToastVisible(false)} duration={toastDuration} />
-      <Image source={require("../../assets/images/logo.png")} style={styles.logo} resizeMode="contain" />
+      <Toast
+        visible={toastVisible}
+        message={toastMessage}
+        type={toastType}
+        onHide={() => setToastVisible(false)}
+        duration={toastDuration}
+      />
+      <View style={styles.backRow}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={26} color="#FFFFFF" />
+        </TouchableOpacity>
+      </View>
+      <Image
+        source={require("../../assets/images/logo.png")}
+        style={styles.logo}
+        resizeMode="contain"
+      />
       <Text style={styles.title}>Sign in</Text>
       <TextInput
         placeholder="Email"
@@ -129,8 +155,10 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
   },
+  backRow: {
+    position: "absolute",
+    top: 30,
+    left: 20,
+    zIndex: 10,
+  },
 });
-
-
-
-

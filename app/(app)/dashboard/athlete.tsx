@@ -1,24 +1,24 @@
-import React, { useEffect, useState } from "react";
+import api from "@/lib/api";
 import { router } from "expo-router";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "../../../context/auth";
 
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-  StatusBar,
-  SafeAreaView,
-  Pressable,
-} from "react-native";
-import {
   Ionicons,
-  MaterialIcons,
   MaterialCommunityIcons,
+  MaterialIcons,
 } from "@expo/vector-icons";
-import axios from "axios";
+import {
+  Image,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface UpcomingEvent {
   id: number;
@@ -46,13 +46,16 @@ interface NavigationButton {
 }
 
 const AthleteDashboard = () => {
-  const { userData, isReady, role,userId } = useAuth();
+  const { userData, isReady, role, userId } = useAuth();
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
+
   useEffect(() => {
-    if (isReady && role !== "athlete") {
+    if (!isReady) return;
+
+    if (userData && role !== "athlete") {
       router.replace("/login");
     }
-  }, [isReady, role]);
+  }, [isReady, role, userData]);
 
   if (!isReady) {
     return (
@@ -61,25 +64,30 @@ const AthleteDashboard = () => {
       </View>
     );
   }
-  useEffect(() =>
-    {
-      const fetchEvents = async () => {
 
-        try {
-          const [response,response2] = await Promise.all([
-            axios.get("http://127.0.0.1:8000/users/" + userId + "/events"),
-            axios.get("http://127.0.0.1:8000/users/" + userId + "/subevents"),
-      ]);
+  useEffect(() => {
+    if (!userId) {
+      setUpcomingEvents([]);
+      return;
+    }
 
-        console.log("Events response:", response.data);
-        console.log("Subevents response:", response2.data);
+    const fetchEvents = async () => {
+      try {
+        const [response, response2] = await Promise.all([
+          api.get(`/users/${userId}/events`),
+          api.get(`/users/${userId}/subevents`),
+        ]);
 
-        const defaultImageUrl = "https://api.builder.io/api/v1/image/assets/TEMP/d657c7793a39131a1442e864a26a553b086c478b?width=720";
-        const events = Array.isArray(response.data?.events) ? response.data.events : [];
-        const subevents = Array.isArray(response2.data?.subevents) ? response2.data.subevents : [];
+        const defaultImageUrl =
+          "https://api.builder.io/api/v1/image/assets/TEMP/d657c7793a39131a1442e864a26a553b086c478b?width=720";
 
-        console.log("Events count:", events.length);
-        console.log("Subevents count:", subevents.length);
+        const events = Array.isArray(response.data?.events)
+          ? response.data.events
+          : [];
+
+        const subevents = Array.isArray(response2.data?.subevents)
+          ? response2.data.subevents
+          : [];
 
         const normalizedEvents = events.map((ev: any) => {
           const computeStatus = (item: any) => {
@@ -95,13 +103,13 @@ const AthleteDashboard = () => {
             if (isNaN(startTs)) return "upcoming";
 
             if (!isNaN(endTs)) {
-                if (now < startTs) return "upcoming";
-                if (now > endTs) return "completed";
-                return "ongoing";
-              }
+              if (now < startTs) return "upcoming";
+              if (now > endTs) return "completed";
+              return "ongoing";
+            }
 
-              return startTs < now ? "completed" : "upcoming";
-            };
+            return startTs < now ? "completed" : "upcoming";
+          };
 
           return {
             ...ev,
@@ -112,59 +120,76 @@ const AthleteDashboard = () => {
             sport: ev.sport || ev.title,
             start_time: ev.start_time || ev.startTime,
             end_time: ev.endTime || ev.end_time,
-            date: new Date(ev.start_time || ev.startTime).toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'}),
-            time: new Date(ev.start_time || ev.startTime).toLocaleTimeString('en-US', {hour: 'numeric', minute: 'numeric', hour12: true}),
+            date: new Date(ev.start_time || ev.startTime).toLocaleDateString(
+              "en-US",
+              { year: "numeric", month: "long", day: "numeric" },
+            ),
+            time: new Date(ev.start_time || ev.startTime).toLocaleTimeString(
+              "en-US",
+              { hour: "numeric", minute: "numeric", hour12: true },
+            ),
           };
         });
+
         const normalizedSubevents = subevents.map((sub: any) => {
-            const computeStatus = (item: any) => {
-              const startRaw = item.start_time ?? item.startTime;
-              const endRaw = item.end_time ?? item.endTime;
+          const computeStatus = (item: any) => {
+            const startRaw = item.start_time ?? item.startTime;
+            const endRaw = item.end_time ?? item.endTime;
 
-              if (!startRaw) return "upcoming";
+            if (!startRaw) return "upcoming";
 
-              const startTs = Date.parse(startRaw);
-              const endTs = endRaw ? Date.parse(endRaw) : NaN;
-              const now = Date.now();
+            const startTs = Date.parse(startRaw);
+            const endTs = endRaw ? Date.parse(endRaw) : NaN;
+            const now = Date.now();
 
-              if (isNaN(startTs)) return "upcoming";
+            if (isNaN(startTs)) return "upcoming";
 
-              if (!isNaN(endTs)) {
-                  if (now < startTs) return "upcoming";
-                  if (now > endTs) return "completed";
-                  return "ongoing";
-                }
+            if (!isNaN(endTs)) {
+              if (now < startTs) return "upcoming";
+              if (now > endTs) return "completed";
+              return "ongoing";
+            }
 
-                return startTs < now ? "completed" : "upcoming";
-            };
+            return startTs < now ? "completed" : "upcoming";
+          };
 
-            return {
-              ...sub,
-              id: String(sub._id || sub.id),
-              title: sub.title,
-              image: sub.imageUrl || defaultImageUrl,
-              status: computeStatus(sub),
-              sport: sub.sport || sub.title,
-              start_time: sub.start_time || sub.startTime,
-              end_time: sub.endTime || sub.end_time,
-              date: new Date(sub.start_time || sub.startTime).toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'}),
-              time: new Date(sub.start_time || sub.startTime).toLocaleTimeString('en-US', {hour: 'numeric', minute: 'numeric', hour12: true}),
-            };
-          });
+          return {
+            ...sub,
+            id: String(sub._id || sub.id),
+            title: sub.title,
+            image: sub.imageUrl || defaultImageUrl,
+            status: computeStatus(sub),
+            sport: sub.sport || sub.title,
+            start_time: sub.start_time || sub.startTime,
+            end_time: sub.endTime || sub.end_time,
+            date: new Date(sub.start_time || sub.startTime).toLocaleDateString(
+              "en-US",
+              { year: "numeric", month: "long", day: "numeric" },
+            ),
+            time: new Date(sub.start_time || sub.startTime).toLocaleTimeString(
+              "en-US",
+              { hour: "numeric", minute: "numeric", hour12: true },
+            ),
+          };
+        });
 
         const combined = [...normalizedEvents, ...normalizedSubevents];
-        const upcomingOnly: UpcomingEvent[] = combined.filter((ev:any) => (ev.status ?? "").toLowerCase() === "upcoming");
-        setUpcomingEvents(upcomingOnly);
-        console.log("Upcoming:" + combined);
-        } catch (err) {
-          console.error("Error fetching events:", err);
-        }
-      };
+        const upcomingOnly: UpcomingEvent[] = combined.filter(
+          (ev: any) => (ev.status ?? "").toLowerCase() === "upcoming",
+        );
 
-      fetchEvents();
-    }, [userId]
-  );
-  const initials = `${userData?.first_name?.[0] ?? ""}${userData?.last_name?.[0] ?? ""}`.toUpperCase();
+        setUpcomingEvents(upcomingOnly);
+      } catch (err) {
+        console.error("Error fetching events:", err);
+      }
+    };
+
+    fetchEvents();
+  }, [userId]);
+
+  const initials =
+    `${userData?.first_name?.[0] ?? ""}${userData?.last_name?.[0] ?? ""}`.toUpperCase();
+
   const openDetails = (e: UpcomingEvent) => {
     router.push({
       pathname: "/(app)/dashboard/event-details",
@@ -181,14 +206,12 @@ const AthleteDashboard = () => {
   const actionButtons: ActionButton[] = [];
 
   const navigationButtons: NavigationButton[] = [
-    
     {
       icon: "map",
       localImage: require("../../../assets/images/map.png"),
       label: "Map",
       onPress: () => console.log("Map pressed"),
     },
-    
     {
       icon: "emoji-events",
       localImage: require("../../../assets/images/results.png"),
@@ -232,15 +255,26 @@ const AthleteDashboard = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#C4161C" />
 
-      {/* Top Banner */}
       <View style={styles.topBanner}>
         <View style={styles.headerContent}>
           <View style={styles.headerSpacer} />
           <Text style={styles.headerTitle}>Athlete Homepage</Text>
           <View style={styles.headerRight}>
-            <TouchableOpacity onPress={() => router.push("../profile")}>
+            <TouchableOpacity
+              onPress={() => {
+                if (userData) {
+                  router.push("../profile");
+                } else {
+                  router.push("/login");
+                }
+              }}
+            >
               <View style={styles.profileInitials}>
-                <Text style={styles.profileText}>{initials}</Text>
+                {userData ? (
+                  <Text style={styles.profileText}>{initials}</Text>
+                ) : (
+                  <Ionicons name="person-outline" size={18} color="#000000" />
+                )}
               </View>
             </TouchableOpacity>
           </View>
@@ -251,31 +285,6 @@ const AthleteDashboard = () => {
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
-        
-        {/*
-        <View style={styles.notificationBanner}>
-          <View style={styles.notificationContent}>
-            <Text style={styles.notificationText}>
-              Women's tennis has been moved to Robins Center
-            </Text>
-            <MaterialIcons name="chevron-right" size={16} color="#BF1818" />
-          </View>
-        </View>
-        /*}
-        {/* Check-In Banner */}{/*}
-        <View style={styles.checkInContainer}>
-          <Text style={styles.checkInTitle}>Here for an event?</Text>
-
-          <TouchableOpacity
-            style={styles.checkInButton}
-            activeOpacity={0.8}
-            onPress={() => console.log("Check In pressed")}
-          >
-            <Text style={styles.checkInButtonText}>CHECK IN ›</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Navigation Buttons */}
         <View style={styles.section}>
           <View style={styles.buttonGrid}>
             {navigationButtons.map((button, index) => (
@@ -293,15 +302,12 @@ const AthleteDashboard = () => {
                 ) : (
                   <MaterialIcons name={button.icon!} size={48} color="#000" />
                 )}
-                <Text style={styles.navigationButtonLabel}>
-                  {button.label}
-                </Text>
+                <Text style={styles.navigationButtonLabel}>{button.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        {/* Upcoming Events Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Your upcoming events</Text>
           <View style={styles.eventsContainer}>
@@ -310,24 +316,22 @@ const AthleteDashboard = () => {
                 <Ionicons name="calendar-outline" size={48} color="#999" />
                 <Text style={styles.noEventsText}>No upcoming events</Text>
               </View>
-              ) : (
+            ) : (
               upcomingEvents.map((event) => (
-              <EventCard
-                key={event.id}
-                event={event}
-                onPress={() => openDetails(event)}
-              />
-            ))
-          )}
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  onPress={() => openDetails(event)}
+                />
+              ))
+            )}
           </View>
         </View>
 
         <View style={styles.bottomSpacing} />
       </ScrollView>
 
-      {/* Bottom Navigation */}
       <View style={styles.bottomNavContainer}>
-        {/* Profile Picture Overlay */}
         <View style={styles.profilePictureOverlay}>
           <View style={styles.profilePicture}>
             <Pressable onPress={() => router.push("/(app)/dashboard/events")}>
@@ -339,7 +343,6 @@ const AthleteDashboard = () => {
           </View>
         </View>
 
-        {/* Navigation Bar */}
         <View style={styles.bottomNav}>
           <View style={styles.navContent}>
             <TouchableOpacity style={styles.navButton} activeOpacity={0.7}>

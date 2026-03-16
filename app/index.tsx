@@ -4,13 +4,14 @@ import { ActivityIndicator, Image, StyleSheet, Text, View } from "react-native";
 
 export default function SplashScreen() {
   const router = useRouter();
+
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.replace("/login");
-    }, 5000); // 5 seconds delay
+      router.replace("/dashboard/athlete");
+    }, 5000);
 
-    return () => clearTimeout(timer); // cleanup
-  }, []);
+    return () => clearTimeout(timer);
+  }, [router]);
 
   return (
     <View style={styles.container}>

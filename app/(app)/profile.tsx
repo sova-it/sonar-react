@@ -1,27 +1,27 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Dimensions,
-} from "react-native";
 import { router } from "expo-router";
-import { useAuth } from "../../context/auth";
+import React from "react";
+import {
+  Dimensions,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import QRCode from "react-native-qrcode-svg";
+import { useAuth } from "../../context/auth";
 
 const screenWidth = Dimensions.get("window").width;
 
 const ProfileScreen = () => {
   const { userData, setAuth, role, userId, isReady } = useAuth();
-  
 
-  const initials = `${userData?.first_name?.[0] || ""}${userData?.last_name?.[0] || ""}`.toUpperCase();
+  const initials =
+    `${userData?.first_name?.[0] || ""}${userData?.last_name?.[0] || ""}`.toUpperCase();
 
   const handleLogout = () => {
     setAuth({ role: "", userId: "", userData: null });
-    router.replace("/(auth)/login");
+    router.replace("/dashboard/athlete");
   };
 
   if (!isReady || !userData) {
@@ -40,10 +40,15 @@ const ProfileScreen = () => {
   );
 
   return (
-    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.container}>
+    <ScrollView
+      keyboardShouldPersistTaps="handled"
+      contentContainerStyle={styles.container}
+    >
       <View style={styles.headerBackground}>
         <View style={styles.headerRow}>
-          <TouchableOpacity onPress={() => router.replace({ pathname: `/dashboard/` as any })}>
+          <TouchableOpacity
+            onPress={() => router.replace({ pathname: `/dashboard/` as any })}
+          >
             <Text style={styles.backText}>← Back</Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>My Profile</Text>
@@ -67,14 +72,16 @@ const ProfileScreen = () => {
           </Text>
           <Text style={styles.memberId}>Member ID: {userData.member_id}</Text>
         </View>
-      {<View style = {styles.qrcode}>
-        <QRCode
-          value={userId??"null"}
-          size={200}
-          color="#000000ff"
-          backgroundColor="#fff"
-        />
-      </View>}
+        {
+          <View style={styles.qrcode}>
+            <QRCode
+              value={userId ?? "null"}
+              size={200}
+              color="#000000ff"
+              backgroundColor="#fff"
+            />
+          </View>
+        }
         <Text style={styles.sectionTitle}>Personal Information</Text>
         {renderField("First Name", userData.first_name)}
         {renderField("Last Name", userData.last_name)}
@@ -82,9 +89,8 @@ const ProfileScreen = () => {
         {renderField("Email", userData.email)}
         {renderField("Pronouns", userData.pronouns)}
 
-        {role === "guardian" && (
-          renderField("Linked Athlete ID", userData.linked_athlete_id || "")
-        )}
+        {role === "guardian" &&
+          renderField("Linked Athlete ID", userData.linked_athlete_id || "")}
 
         {role === "athlete" && (
           <>
@@ -93,8 +99,14 @@ const ProfileScreen = () => {
             {renderField("Guardian Name", userData.guardian_name || "")}
             {renderField("Date of Birth", userData.dob || "")}
             {renderField("Medical Info", userData.medical_info || "")}
-            {renderField("Emergency Contact Name", userData.emergency_contact_name || "")}
-            {renderField("Emergency Contact Number", userData.emergency_contact_phone || "")}
+            {renderField(
+              "Emergency Contact Name",
+              userData.emergency_contact_name || "",
+            )}
+            {renderField(
+              "Emergency Contact Number",
+              userData.emergency_contact_phone || "",
+            )}
           </>
         )}
 
@@ -222,9 +234,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
   },
-  qrcode:{
+  qrcode: {
     justifyContent: "center",
     alignItems: "center",
-    marginBottom:50
-  }
+    marginBottom: 50,
+  },
 });

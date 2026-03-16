@@ -1,7 +1,7 @@
-import { useAuth } from "../../../context/auth";
-import { useEffect } from "react";
 import { router } from "expo-router";
-import { View, ActivityIndicator } from "react-native";
+import { useEffect } from "react";
+import { ActivityIndicator, View } from "react-native";
+import { useAuth } from "../../../context/auth";
 
 export default function DashboardIndex() {
   const { role, isReady } = useAuth();
@@ -12,7 +12,7 @@ export default function DashboardIndex() {
     if (role) {
       router.replace({ pathname: `/dashboard/${role}` as any });
     } else {
-      router.replace("/login");
+      router.replace("/dashboard/athlete");
     }
   }, [role, isReady]);
 
