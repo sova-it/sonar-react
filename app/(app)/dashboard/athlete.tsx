@@ -45,6 +45,29 @@ interface NavigationButton {
   localImage?: any;
 }
 
+const sportConfig: Record<string, any> = {
+  running: { icon: "run" },
+  bowling: { icon: "bowling" },
+  swimming: { icon: "swim" },
+  softball: { icon: "baseball" },
+  tennis: {
+    image: require("../../../assets/images/tennispixel.png"),
+  },
+};
+
+const getSportKey = (sport?: string) =>
+  sport?.toLowerCase().includes("tennis")
+    ? "tennis"
+    : sport?.toLowerCase().includes("swim")
+      ? "swimming"
+      : sport?.toLowerCase().includes("bowl")
+        ? "bowling"
+        : sport?.toLowerCase().includes("run")
+          ? "running"
+          : sport?.toLowerCase().includes("soft")
+            ? "softball"
+            : "running";
+
 const AthleteDashboard = () => {
   const { userData, isReady, role, userId } = useAuth();
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
@@ -66,16 +89,13 @@ const AthleteDashboard = () => {
   }
 
   useEffect(() => {
-    if (!userId) {
-      setUpcomingEvents([]);
-      return;
-    }
-
     const fetchEvents = async () => {
       try {
         const [response, response2] = await Promise.all([
-          api.get(`/users/${userId}/events`),
-          api.get(`/users/${userId}/subevents`),
+          userId ? api.get(`/users/${userId}/events`) : api.get("/events"),
+          userId
+            ? api.get(`/users/${userId}/subevents`)
+            : api.get("/subevents"),
         ]);
 
         const defaultImageUrl =
@@ -89,98 +109,63 @@ const AthleteDashboard = () => {
           ? response2.data.subevents
           : [];
 
-        const normalizedEvents = events.map((ev: any) => {
-          const computeStatus = (item: any) => {
-            const startRaw = item.start_time ?? item.startTime;
-            const endRaw = item.end_time ?? item.endTime;
+        const computeStatus = (item: any) => {
+          const startRaw = item.start_time ?? item.startTime;
+          const endRaw = item.end_time ?? item.endTime;
 
-            if (!startRaw) return "upcoming";
+          if (!startRaw) return "upcoming";
 
-            const startTs = Date.parse(startRaw);
-            const endTs = endRaw ? Date.parse(endRaw) : NaN;
-            const now = Date.now();
+          const startTs = Date.parse(startRaw);
+          const endTs = endRaw ? Date.parse(endRaw) : NaN;
+          const now = Date.now();
 
-            if (isNaN(startTs)) return "upcoming";
+          if (isNaN(startTs)) return "upcoming";
 
-            if (!isNaN(endTs)) {
-              if (now < startTs) return "upcoming";
-              if (now > endTs) return "completed";
-              return "ongoing";
-            }
+          if (!isNaN(endTs)) {
+            if (now < startTs) return "upcoming";
+            if (now > endTs) return "completed";
+            return "ongoing";
+          }
 
-            return startTs < now ? "completed" : "upcoming";
-          };
+          return startTs < now ? "completed" : "upcoming";
+        };
 
-          return {
-            ...ev,
-            id: String(ev._id || ev.id),
-            title: ev.title,
-            image: ev.imageUrl || defaultImageUrl,
-            status: computeStatus(ev),
-            sport: ev.sport || ev.title,
-            start_time: ev.start_time || ev.startTime,
-            end_time: ev.endTime || ev.end_time,
-            date: new Date(ev.start_time || ev.startTime).toLocaleDateString(
-              "en-US",
-              { year: "numeric", month: "long", day: "numeric" },
-            ),
-            time: new Date(ev.start_time || ev.startTime).toLocaleTimeString(
-              "en-US",
-              { hour: "numeric", minute: "numeric", hour12: true },
-            ),
-          };
+        const normalize = (ev: any) => ({
+          ...ev,
+          id: String(ev._id || ev.id),
+          title: ev.title,
+          image: ev.imageUrl || defaultImageUrl,
+          status: computeStatus(ev),
+          sport: ev.sport || ev.title,
+          start_time: ev.start_time || ev.startTime,
+          end_time: ev.endTime || ev.end_time,
+          date: new Date(ev.start_time || ev.startTime).toLocaleDateString(
+            "en-US",
+            { year: "numeric", month: "long", day: "numeric" },
+          ),
+          time: new Date(ev.start_time || ev.startTime).toLocaleTimeString(
+            "en-US",
+            { hour: "numeric", minute: "numeric", hour12: true },
+          ),
         });
 
-        const normalizedSubevents = subevents.map((sub: any) => {
-          const computeStatus = (item: any) => {
-            const startRaw = item.start_time ?? item.startTime;
-            const endRaw = item.end_time ?? item.endTime;
+        const combined = [
+          ...events.map(normalize),
+          ...subevents.map(normalize),
+        ];
 
-            if (!startRaw) return "upcoming";
-
-            const startTs = Date.parse(startRaw);
-            const endTs = endRaw ? Date.parse(endRaw) : NaN;
-            const now = Date.now();
-
-            if (isNaN(startTs)) return "upcoming";
-
-            if (!isNaN(endTs)) {
-              if (now < startTs) return "upcoming";
-              if (now > endTs) return "completed";
-              return "ongoing";
-            }
-
-            return startTs < now ? "completed" : "upcoming";
-          };
-
-          return {
-            ...sub,
-            id: String(sub._id || sub.id),
-            title: sub.title,
-            image: sub.imageUrl || defaultImageUrl,
-            status: computeStatus(sub),
-            sport: sub.sport || sub.title,
-            start_time: sub.start_time || sub.startTime,
-            end_time: sub.endTime || sub.end_time,
-            date: new Date(sub.start_time || sub.startTime).toLocaleDateString(
-              "en-US",
-              { year: "numeric", month: "long", day: "numeric" },
-            ),
-            time: new Date(sub.start_time || sub.startTime).toLocaleTimeString(
-              "en-US",
-              { hour: "numeric", minute: "numeric", hour12: true },
-            ),
-          };
-        });
-
-        const combined = [...normalizedEvents, ...normalizedSubevents];
-        const upcomingOnly: UpcomingEvent[] = combined.filter(
-          (ev: any) => (ev.status ?? "").toLowerCase() === "upcoming",
-        );
+        const upcomingOnly = combined
+          .filter((ev) => ev.status.toLowerCase() === "upcoming")
+          .sort(
+            (a, b) =>
+              new Date(a.start_time).getTime() -
+              new Date(b.start_time).getTime(),
+          )
+          .slice(0, 5);
 
         setUpcomingEvents(upcomingOnly);
       } catch (err) {
-        console.error("Error fetching events:", err);
+        console.error(err);
       }
     };
 
@@ -238,7 +223,22 @@ const AthleteDashboard = () => {
       <Image source={event.image} style={styles.eventImage} />
       <View style={styles.eventContent}>
         <View style={styles.eventHeader}>
-          <TennisIcon />
+          {(() => {
+            const sportKey = getSportKey(event.sport);
+            const config = sportConfig[sportKey];
+
+            return config.image ? (
+              <Image source={config.image} style={styles.tennisIconImage} />
+            ) : (
+              <MaterialCommunityIcons
+                name={config.icon}
+                size={45}
+                color="#C4161C"
+                style={{ marginRight: 12 }}
+              />
+            );
+          })()}
+
           <View style={styles.eventTitleContainer}>
             <Text style={styles.eventTitle}>{event.title}</Text>
           </View>

@@ -1,19 +1,18 @@
-import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import api from "@/lib/api";
+import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-    Image,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useAuth } from "../../../context/auth";
 
-const statuses = ["all", "ongoing", "upcoming", "completed","my_events"];
 const categories = ["All Sports", "Athletics", "Bowling", "Swimming", "Tennis"];
 
 const computeStatus = (item: any): string => {
@@ -39,6 +38,9 @@ const computeStatus = (item: any): string => {
 
 const EventScreen = () => {
   const { userId } = useAuth();
+  const statuses = userId
+    ? ["all", "ongoing", "upcoming", "completed", "my_events"]
+    : ["all", "ongoing", "upcoming", "completed"];
   const [activeCategory, setActiveCategory] = useState("All Sports");
   const [activeStatus, setActiveStatus] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -49,13 +51,20 @@ const EventScreen = () => {
   useEffect(() => {
     const fetchUserEvents = async () => {
       try {
-        const response = await api.get(
-          "/users/" + userId + "/events"
-        );
-        const defaultImageUrl = "https://api.builder.io/api/v1/image/assets/TEMP/d657c7793a39131a1442e864a26a553b086c478b?width=720";
-        const list = Array.isArray(response.data?.events) ? response.data.events : [];
+        const response = await api.get("/users/" + userId + "/events");
+        const defaultImageUrl =
+          "https://api.builder.io/api/v1/image/assets/TEMP/d657c7793a39131a1442e864a26a553b086c478b?width=720";
+        const list = Array.isArray(response.data?.events)
+          ? response.data.events
+          : [];
         setEventData(
-          list.map((ev: any) => ({ ...ev, id: String(ev.id ?? ev._id),imageUrl:ev.imageUrl||defaultImageUrl,sportCategory: ev.sportCategory||"General", status: computeStatus(ev) }))
+          list.map((ev: any) => ({
+            ...ev,
+            id: String(ev.id ?? ev._id),
+            imageUrl: ev.imageUrl || defaultImageUrl,
+            sportCategory: ev.sportCategory || "General",
+            status: computeStatus(ev),
+          })),
         );
       } catch (error) {
         console.error(error);
@@ -68,56 +77,61 @@ const EventScreen = () => {
     const fetchAllEvents = async () => {
       try {
         const [response, response2] = await Promise.all([
-        api.get("/events"),
-        api.get("/subevents"),
-      ]);
+          api.get("/events"),
+          api.get("/subevents"),
+        ]);
         const getSportCategory = (event: any) => {
-        const matchedCategory = categories.find(
-          cat => cat.toLowerCase() === event.title?.toLowerCase()
-        );
-        
-        // Return matched category, existing, or default
-        return matchedCategory || event.sportCategory || "Athletics";
-      };
-        const defaultImageUrl = "https://api.builder.io/api/v1/image/assets/TEMP/d657c7793a39131a1442e864a26a553b086c478b?width=720";
-        const events = Array.isArray(response.data?.events) ? response.data.events : [];
-        const subevents = Array.isArray(response2.data?.subevents) ? response2.data.subevents : [];
+          const matchedCategory = categories.find(
+            (cat) => cat.toLowerCase() === event.title?.toLowerCase(),
+          );
+
+          // Return matched category, existing, or default
+          return matchedCategory || event.sportCategory || "Athletics";
+        };
+        const defaultImageUrl =
+          "https://api.builder.io/api/v1/image/assets/TEMP/d657c7793a39131a1442e864a26a553b086c478b?width=720";
+        const events = Array.isArray(response.data?.events)
+          ? response.data.events
+          : [];
+        const subevents = Array.isArray(response2.data?.subevents)
+          ? response2.data.subevents
+          : [];
         console.log("Raw Events:", JSON.stringify(events[2], null, 2));
         console.log(computeStatus(events[2]));
         const normalizedEvents = events.map((ev: any) => ({
-        ...ev,
-        id: String(ev._id || ev.id),
-        title: ev.title,
-        imageUrl: ev.imageUrl || defaultImageUrl,
-        sportCategory: getSportCategory(ev),
-        status: computeStatus(ev),
-        sport: ev.sport || ev.title,
-        participants: ev.participants || 0,
-        startTime: ev.start_time || ev.startTime,
-      }));
+          ...ev,
+          id: String(ev._id || ev.id),
+          title: ev.title,
+          imageUrl: ev.imageUrl || defaultImageUrl,
+          sportCategory: getSportCategory(ev),
+          status: computeStatus(ev),
+          sport: ev.sport || ev.title,
+          participants: ev.participants || 0,
+          startTime: ev.start_time || ev.startTime,
+        }));
 
-      const normalizedSubevents = subevents.map((ev: any) => ({
-        ...ev,
-        id: String(ev._id || ev.id),
-        title: ev.title,
-        imageUrl: ev.imageUrl || defaultImageUrl,
-        sportCategory: getSportCategory(ev),
-        status: computeStatus(ev),
-        sport: ev.sport || ev.title,
-        participants: ev.participants || 0,
-        startTime: ev.start_time || ev.startTime,
-      }));
-      
-      const combined = [...normalizedEvents, ...normalizedSubevents];
-      
-      setAllEventData(combined);
+        const normalizedSubevents = subevents.map((ev: any) => ({
+          ...ev,
+          id: String(ev._id || ev.id),
+          title: ev.title,
+          imageUrl: ev.imageUrl || defaultImageUrl,
+          sportCategory: getSportCategory(ev),
+          status: computeStatus(ev),
+          sport: ev.sport || ev.title,
+          participants: ev.participants || 0,
+          startTime: ev.start_time || ev.startTime,
+        }));
+
+        const combined = [...normalizedEvents, ...normalizedSubevents];
+
+        setAllEventData(combined);
       } catch (error) {
         console.error(error);
       }
     };
 
     fetchAllEvents();
-    }, []);
+  }, []);
 
   const filteredEvents = useMemo(() => {
     const source = activeStatus === "my_events" ? eventData : allEventData;
@@ -128,16 +142,14 @@ const EventScreen = () => {
     }
     if (activeStatus !== "all" && activeStatus !== "my_events") {
       filtered = filtered.filter(
-        (e) => e.status?.toLowerCase() === activeStatus.toLowerCase()
+        (e) => e.status?.toLowerCase() === activeStatus.toLowerCase(),
       );
     }
     if (searchQuery) {
       filtered = filtered.filter(
         (e) =>
           e.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          e.sportCategory
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase())
+          e.sportCategory.toLowerCase().includes(searchQuery.toLowerCase()),
       );
     }
 
@@ -240,7 +252,9 @@ const EventScreen = () => {
           >
             <Text
               style={
-                activeStatus === status ? styles.chipTextActive : styles.chipText
+                activeStatus === status
+                  ? styles.chipTextActive
+                  : styles.chipText
               }
             >
               {status === "my_events"
@@ -269,17 +283,66 @@ const EventScreen = () => {
                 style={styles.eventCard}
                 onPress={() => openDetails(event)}
               >
-                <Image source={{ uri: event.imageUrl }} style={styles.eventImage} />
+                <Image
+                  source={{ uri: event.imageUrl }}
+                  style={styles.eventImage}
+                />
                 <View style={styles.eventFooter}>
                   <View>
                     <Text style={styles.eventTitle}>{event.title}</Text>
                     <View style={styles.eventMeta}>
-                      <MaterialCommunityIcons
-                        name="run"
-                        size={14}
-                        color="#C4161C"
-                        style={{ marginRight: 6 }}
-                      />
+                      {(() => {
+                        const sportConfig: Record<
+                          string,
+                          {
+                            icon?: keyof typeof MaterialCommunityIcons.glyphMap;
+                            image?: any;
+                          }
+                        > = {
+                          running: { icon: "run" },
+                          bowling: { icon: "bowling" },
+                          swimming: { icon: "swim" },
+                          softball: { icon: "baseball" },
+                          tennis: {
+                            image: require("../../../assets/images/tennispixel.png"),
+                          },
+                        };
+
+                        const getSportKey = (sport?: string) =>
+                          sport?.toLowerCase().includes("tennis")
+                            ? "tennis"
+                            : sport?.toLowerCase().includes("swim")
+                              ? "swimming"
+                              : sport?.toLowerCase().includes("bowl")
+                                ? "bowling"
+                                : sport?.toLowerCase().includes("run")
+                                  ? "running"
+                                  : sport?.toLowerCase().includes("soft")
+                                    ? "softball"
+                                    : "running";
+
+                        const sportKey = getSportKey(event.sport);
+                        const config = sportConfig[sportKey];
+
+                        if (config.image) {
+                          return (
+                            <Image
+                              source={config.image}
+                              style={{ width: 14, height: 14, marginRight: 6 }}
+                            />
+                          );
+                        }
+
+                        return (
+                          <MaterialCommunityIcons
+                            name={config.icon!}
+                            size={14}
+                            color="#C4161C"
+                            style={{ marginRight: 6 }}
+                          />
+                        );
+                      })()}
+
                       <Text style={{ color: "green", fontSize: 12 }}>
                         {event.status.toUpperCase()}
                       </Text>

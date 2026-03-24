@@ -129,7 +129,7 @@ export default function EventDetails() {
 
   const conf: SportConf =
     sportConfig[(sport || "").toLowerCase()] ??
-    ({ label: sport || "Sport", icon: "trophy" } as const);
+    ({ label: sport || "Athletics", icon: "run" } as const);
   const date = fmtDate(start_time);
   const start = fmtTime(start_time);
   const end = fmtTime(end_time);
@@ -202,7 +202,7 @@ export default function EventDetails() {
           {"image" in conf ? (
             <Image
               source={conf.image}
-              style={{ width: 110, height: 125, resizeMode: "contain" }}
+              style={{ width: 80, height: 80, resizeMode: "contain" }}
             />
           ) : (
             <MaterialCommunityIcons
