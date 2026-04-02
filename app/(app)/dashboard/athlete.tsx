@@ -75,8 +75,13 @@ const AthleteDashboard = () => {
   useEffect(() => {
     if (!isReady) return;
 
-    if (userData && role !== "athlete") {
-      router.replace("/login");
+    if (!userData) return;
+
+    // Wait until role is actually loaded
+    if (role === undefined || role === null) return;
+
+    if (role !== "athlete") {
+      router.replace("/(auth)/login");
     }
   }, [isReady, role, userData]);
 

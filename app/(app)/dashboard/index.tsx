@@ -12,7 +12,7 @@ export default function DashboardIndex() {
     if (role) {
       router.replace({ pathname: `/dashboard/${role}` as any });
     } else {
-      router.replace("/dashboard/athlete");
+      router.replace("/(app)/dashboard/athlete");
     }
   }, [role, isReady]);
 
