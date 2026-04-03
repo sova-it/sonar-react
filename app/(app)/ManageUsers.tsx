@@ -2,6 +2,7 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import api from "@/lib/api";
 import { router } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
+import {Dropdown} from 'react-native-element-dropdown';
 import {
   ActivityIndicator,
   Dimensions,
@@ -16,6 +17,7 @@ import {
   View,
 } from "react-native";
 import { useAuth } from "../../context/auth";
+import Toast, {ToastType} from "../(app)/results/components/Toast";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -28,14 +30,24 @@ const UserManagerScreen = () => {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
-
-  
-
+  const [volunteerTasks, setVolunteerTasks] = useState([]);
+  const [currentTask, setCurrentTask] = useState<any>(null);
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastType, setToastType] = useState<ToastType>("success");
+  const [toastDuration, setToastDuration] = useState(3000);
+  const showToast = (message: string, type: ToastType, duration?: number) => {
+    setToastMessage(message);
+    setToastType(type);
+    setToastVisible(true);
+    setToastDuration(duration || 3000);
+  };
   useEffect(() => {
     if (isReady && role !== "admin" && role !== "coordinator") {
       router.replace("/dashboard");
     }else{
       fetchUsers();
+      fetchVolunteerRoles();
     }
   }, [isReady]);
 
@@ -49,6 +61,37 @@ const UserManagerScreen = () => {
       setLoading(false);
     }
   };
+  const fetchVolunteerRoles = async()=>{
+    try{
+      let res = await api.get('/volunteer_tasks');
+      res.data.volunteer_tasks.unshift({title:"Assign New Volunteer Task",_id:null});
+      setVolunteerTasks(res.data.volunteer_tasks || []);
+    }catch(err){
+      console.error('Failed to fetch volunteer roles', err);
+    }finally{
+      setLoading(false);
+    }
+  };
+  const changeVolunteerTask = async(item:any)=>{
+    setSelectedUser(null);
+    if (item === null || item._id === null) {
+      return;
+    }
+    try{
+      const res = await api.post('/volunteer_task_assignment',{
+        volunteer_id: selectedUser._id,
+        task_id: item._id,
+        assigned_by: userData._id,
+        Shift_Start_Date_Time: new Date().toISOString().split('.')[0],
+
+      })
+      showToast('Volunteer task assigned successfully', 'success');
+    }catch(error){
+      console.error('Failed to assign volunteer task', error);
+      showToast('Failed to assign volunteer task', 'error');
+    }
+  }
+  
 
   const filteredUsers = useMemo(() => {
     return users.filter((user) => {
@@ -104,6 +147,13 @@ const UserManagerScreen = () => {
   return (
     <>
       <ScrollView style={styles.container}>
+        <Toast
+        visible={toastVisible}
+        message={toastMessage}
+        type={toastType}
+        onHide={() => setToastVisible(false)}
+        duration={toastDuration}
+      />
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Text style={styles.header}>User Manager</Text>
           <TouchableOpacity onPress={() => router.back()}>
@@ -158,8 +208,13 @@ const UserManagerScreen = () => {
               <Text style={styles.modalInfo}>Pronouns: {selectedUser?.pronouns}</Text>
               <Text style={styles.modalInfo}>Guardian Name: {selectedUser?.guardian_name}</Text>
               <Text style={styles.modalInfo}>Medical Info: {selectedUser?.medical_info}</Text>
+              {selectedUser?.role === "volunteer" && (role==="admin" || role==="coordinator")&&
+              <Dropdown style={styles.dropdown} search data={volunteerTasks} labelField="title" valueField="_id" onChange={(item)=>setCurrentTask(item)} placeholder="Assign New Volunteer Task" placeholderStyle={styles.placeholderText} 
+              selectedTextStyle={styles.placeholderText} itemTextStyle={styles.placeholderText} searchPlaceholder="Search..." inputSearchStyle={styles.placeholderText}></Dropdown>
+                }
+              
             </ScrollView>
-            <TouchableOpacity onPress={() => setSelectedUser(null)} style={styles.closeButton}>
+            <TouchableOpacity onPress={() => changeVolunteerTask(currentTask)} style={styles.closeButton}>
               <Text style={{ color: "#fff", textAlign: "center", fontWeight: "bold" }}>Done</Text>
             </TouchableOpacity>
           </View>
@@ -323,4 +378,30 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 8,
   },
+  dropdown:{
+    marginBottom:8,
+    width:"50%",
+    borderColor: "#333",
+    borderWidth:1,
+    borderRadius:12,
+    padding:12,
+    shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 1,
+      },
+      shadowOpacity: 0.2,
+      shadowRadius: 1.41,
+
+      elevation: 2,
+  },
+  placeholderText:{
+    fontSize: 14,
+    color: "#333",
+  },
+  selectedText:{
+    fontSize: 14,
+    color: "#333",
+  }
+
 });
