@@ -72,19 +72,6 @@ const AthleteDashboard = () => {
   const { userData, isReady, role, userId } = useAuth();
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
 
-  useEffect(() => {
-    if (!isReady) return;
-
-    if (!userData) return;
-
-    // Wait until role is actually loaded
-    if (role === undefined || role === null) return;
-
-    if (role !== "athlete") {
-      router.replace("/(auth)/login");
-    }
-  }, [isReady, role, userData]);
-
   if (!isReady) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -200,7 +187,7 @@ const AthleteDashboard = () => {
       icon: "map",
       localImage: require("../../../assets/images/map.png"),
       label: "Map",
-      onPress: () => console.log("Map pressed"),
+      onPress: () => router.push("./map"),
     },
     {
       icon: "emoji-events",

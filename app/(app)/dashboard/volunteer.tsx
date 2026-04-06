@@ -1,24 +1,24 @@
-import React, { useEffect, useState } from "react";
 import { router } from "expo-router";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "../../../context/auth";
 
 import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-  StatusBar,
-  SafeAreaView,
-  Pressable,
-} from "react-native";
-import {
   Ionicons,
-  MaterialIcons,
   MaterialCommunityIcons,
+  MaterialIcons,
 } from "@expo/vector-icons";
 import axios from "axios";
+import {
+  Image,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface UpcomingEvent {
   id: number;
@@ -28,7 +28,7 @@ interface UpcomingEvent {
   image: any;
   sport?: string;
   start_time?: string; // ISO or human-readable, whichever your details screen expects
-  end_time?: string;   // ISO or human-readable, whichever your details screen expects
+  end_time?: string; // ISO or human-readable, whichever your details screen expects
 }
 
 interface ActionButton {
@@ -46,7 +46,7 @@ interface NavigationButton {
 }
 
 const VolunteerDashboard = () => {
-  const { userData, isReady , role,userId  } = useAuth();
+  const { userData, isReady, role, userId } = useAuth();
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   useEffect(() => {
     if (isReady && role !== "volunteer") {
@@ -61,110 +61,127 @@ const VolunteerDashboard = () => {
       </View>
     );
   }
-  useEffect(() => 
-    {
-      const fetchEvents = async () => {
-
-        try {
-          const [response,response2] = await Promise.all([
-            axios.get("http://127.0.0.1:8000/users/" + userId + "/events"),
-            axios.get("http://127.0.0.1:8000/users/" + userId + "/subevents"),
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const [response, response2] = await Promise.all([
+          axios.get("http://127.0.0.1:8000/users/" + userId + "/events"),
+          axios.get("http://127.0.0.1:8000/users/" + userId + "/subevents"),
         ]);
 
-          console.log("Events response:", response.data);
-          console.log("Subevents response:", response2.data);
+        console.log("Events response:", response.data);
+        console.log("Subevents response:", response2.data);
 
-          const defaultImageUrl = "https://api.builder.io/api/v1/image/assets/TEMP/d657c7793a39131a1442e864a26a553b086c478b?width=720";
-          const events = Array.isArray(response.data?.events) ? response.data.events : [];
-          const subevents = Array.isArray(response2.data?.subevents) ? response2.data.subevents : [];
+        const defaultImageUrl =
+          "https://api.builder.io/api/v1/image/assets/TEMP/d657c7793a39131a1442e864a26a553b086c478b?width=720";
+        const events = Array.isArray(response.data?.events)
+          ? response.data.events
+          : [];
+        const subevents = Array.isArray(response2.data?.subevents)
+          ? response2.data.subevents
+          : [];
 
-          console.log("Events count:", events.length);
-          console.log("Subevents count:", subevents.length);
+        console.log("Events count:", events.length);
+        console.log("Subevents count:", subevents.length);
 
-          const normalizedEvents = events.map((ev: any) => {
-            const computeStatus = (item: any) => {
-              const startRaw = item.startTime ?? item.start_time;
-              const endRaw = item.endTime ?? item.end_time;
+        const normalizedEvents = events.map((ev: any) => {
+          const computeStatus = (item: any) => {
+            const startRaw = item.startTime ?? item.start_time;
+            const endRaw = item.endTime ?? item.end_time;
 
-              if (!startRaw) return "upcoming";
+            if (!startRaw) return "upcoming";
 
-              const startTs = Date.parse(startRaw);
-              const endTs = endRaw ? Date.parse(endRaw) : NaN;
-              const now = Date.now();
+            const startTs = Date.parse(startRaw);
+            const endTs = endRaw ? Date.parse(endRaw) : NaN;
+            const now = Date.now();
 
-              if (isNaN(startTs)) return "upcoming";
+            if (isNaN(startTs)) return "upcoming";
 
-              if (!isNaN(endTs)) {
-                if (now < startTs) return "upcoming";
-                if (now > endTs) return "completed";
-                return "ongoing";
-              }
+            if (!isNaN(endTs)) {
+              if (now < startTs) return "upcoming";
+              if (now > endTs) return "completed";
+              return "ongoing";
+            }
 
-              return startTs < now ? "completed" : "upcoming";
-            };
+            return startTs < now ? "completed" : "upcoming";
+          };
 
-            return {
-              ...ev,
-              id: String(ev._id || ev.id),
-              title: ev.title,
-              image: ev.imageUrl || defaultImageUrl,
-              status: computeStatus(ev),
-              sport: ev.sport || ev.title,
-              start_time: ev.startTime || ev.start_time,
-              end_time: ev.endTime || ev.end_time,
-              date: new Date(ev.startTime || ev.start_time).toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'}),
-              time: new Date(ev.startTime || ev.start_time).toLocaleTimeString('en-US', {hour: 'numeric', minute: 'numeric', hour12: true}),
-            };
-          });
-          const normalizedSubevents = subevents.map((sub: any) => {
-            const computeStatus = (item: any) => {
-              const startRaw = item.start_time ?? item.startTime;
-              const endRaw = item.end_time ?? item.endTime;
+          return {
+            ...ev,
+            id: String(ev._id || ev.id),
+            title: ev.title,
+            image: ev.imageUrl || defaultImageUrl,
+            status: computeStatus(ev),
+            sport: ev.sport || ev.title,
+            start_time: ev.startTime || ev.start_time,
+            end_time: ev.endTime || ev.end_time,
+            date: new Date(ev.startTime || ev.start_time).toLocaleDateString(
+              "en-US",
+              { year: "numeric", month: "long", day: "numeric" },
+            ),
+            time: new Date(ev.startTime || ev.start_time).toLocaleTimeString(
+              "en-US",
+              { hour: "numeric", minute: "numeric", hour12: true },
+            ),
+          };
+        });
+        const normalizedSubevents = subevents.map((sub: any) => {
+          const computeStatus = (item: any) => {
+            const startRaw = item.start_time ?? item.startTime;
+            const endRaw = item.end_time ?? item.endTime;
 
-              if (!startRaw) return "upcoming";
+            if (!startRaw) return "upcoming";
 
-              const startTs = Date.parse(startRaw);
-              const endTs = endRaw ? Date.parse(endRaw) : NaN;
-              const now = Date.now();
+            const startTs = Date.parse(startRaw);
+            const endTs = endRaw ? Date.parse(endRaw) : NaN;
+            const now = Date.now();
 
-              if (isNaN(startTs)) return "upcoming";
+            if (isNaN(startTs)) return "upcoming";
 
-              if (!isNaN(endTs)) {
-                if (now < startTs) return "upcoming";
-                if (now > endTs) return "completed";
-                return "ongoing";
-              }
+            if (!isNaN(endTs)) {
+              if (now < startTs) return "upcoming";
+              if (now > endTs) return "completed";
+              return "ongoing";
+            }
 
-              return startTs < now ? "completed" : "upcoming";
-            };
+            return startTs < now ? "completed" : "upcoming";
+          };
 
-            return {
-              ...sub,
-              id: String(sub._id || sub.id),
-              title: sub.title,
-              image: sub.imageUrl || defaultImageUrl,
-              status: computeStatus(sub),
-              sport: sub.sport || sub.title,
-              start_time: sub.startTime || sub.start_time,
-              end_time: sub.endTime || sub.end_time,
-              date: new Date(sub.start_time || sub.startTime).toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'}),
-              time: new Date(sub.start_time || sub.startTime).toLocaleTimeString('en-US', {hour: 'numeric', minute: 'numeric', hour12: true}),
-            };
-          });
+          return {
+            ...sub,
+            id: String(sub._id || sub.id),
+            title: sub.title,
+            image: sub.imageUrl || defaultImageUrl,
+            status: computeStatus(sub),
+            sport: sub.sport || sub.title,
+            start_time: sub.startTime || sub.start_time,
+            end_time: sub.endTime || sub.end_time,
+            date: new Date(sub.start_time || sub.startTime).toLocaleDateString(
+              "en-US",
+              { year: "numeric", month: "long", day: "numeric" },
+            ),
+            time: new Date(sub.start_time || sub.startTime).toLocaleTimeString(
+              "en-US",
+              { hour: "numeric", minute: "numeric", hour12: true },
+            ),
+          };
+        });
 
-          const combined = [...normalizedEvents, ...normalizedSubevents];
-          const upcomingOnly: UpcomingEvent[] = combined.filter((ev:any) => (ev.status ?? "").toLowerCase() === "upcoming");
-          setUpcomingEvents(upcomingOnly);
-          console.log("Upcoming:" + combined);
-          } catch (err) {
-          console.error("Error fetching events:", err);
-        }
-      };
-      fetchEvents();
-    }, [userId]
-  );
-    const initials = `${userData?.first_name?.[0] ?? ""}${userData?.last_name?.[0] ?? ""}`.toUpperCase();
-    const openDetails = (e: UpcomingEvent) => {
+        const combined = [...normalizedEvents, ...normalizedSubevents];
+        const upcomingOnly: UpcomingEvent[] = combined.filter(
+          (ev: any) => (ev.status ?? "").toLowerCase() === "upcoming",
+        );
+        setUpcomingEvents(upcomingOnly);
+        console.log("Upcoming:" + combined);
+      } catch (err) {
+        console.error("Error fetching events:", err);
+      }
+    };
+    fetchEvents();
+  }, [userId]);
+  const initials =
+    `${userData?.first_name?.[0] ?? ""}${userData?.last_name?.[0] ?? ""}`.toUpperCase();
+  const openDetails = (e: UpcomingEvent) => {
     router.push({
       pathname: "/(app)/dashboard/event-details",
       params: {
@@ -188,7 +205,7 @@ const VolunteerDashboard = () => {
       icon: "map",
       localImage: require("../../../assets/images/map.png"),
       label: "Map",
-      onPress: () => console.log("Map pressed"),
+      onPress: () => router.push("/(app)/dashboard/map"),
     },
   ];
 
@@ -261,7 +278,6 @@ const VolunteerDashboard = () => {
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
-        
         {/* Action Buttons */}
         <View style={styles.section}>
           <View style={styles.buttonGrid}>
@@ -319,15 +335,15 @@ const VolunteerDashboard = () => {
                 <Ionicons name="calendar-outline" size={48} color="#999" />
                 <Text style={styles.noEventsText}>No upcoming events</Text>
               </View>
-              ) : (
+            ) : (
               upcomingEvents.map((event) => (
-              <EventCard
-                key={event.id}
-                event={event}
-                onPress={() => openDetails(event)}
-              />
-            ))
-          )}
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  onPress={() => openDetails(event)}
+                />
+              ))
+            )}
           </View>
         </View>
 
