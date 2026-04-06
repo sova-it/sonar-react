@@ -29,6 +29,9 @@ export default function LoginScreen() {
     setToastVisible(true);
     setToastDuration(duration || 3000);
   };
+  const goToQrLogin = () => {
+    router.push("/qr-login");
+  };
   const handleLogin = async () => {
     setError("");
     setLoading(true);
@@ -113,6 +116,15 @@ export default function LoginScreen() {
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Sign In</Text>
       </TouchableOpacity>
+      <View style={styles.dividerContainer}>
+        <View style={styles.line} />
+        <Text style={styles.orText}>OR</Text>
+        <View style={styles.line} />
+      </View>
+
+      <TouchableOpacity style={styles.secondaryButton} onPress={goToQrLogin}>
+        <Text style={styles.secondaryButtonText}>QR Login</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -160,5 +172,34 @@ const styles = StyleSheet.create({
     top: 30,
     left: 20,
     zIndex: 10,
+  },
+  secondaryButton: {
+    borderWidth: 2,
+    borderColor: "#fff",
+    borderRadius: 8,
+    padding: 14,
+    marginTop: 12,
+    alignItems: "center",
+    backgroundColor: "transparent",
+  },
+  secondaryButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  dividerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 20,
+  },
+  line: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#fff",
+  },
+  orText: {
+    marginHorizontal: 10,
+    color: "#fff",
+    fontWeight: "bold",
   },
 });
