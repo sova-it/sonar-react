@@ -3,7 +3,7 @@ import { Platform } from "react-native";
 
 /**
  * - Development (npm start/npx expo start): Uses EXPO_PUBLIC_API_URL from .env, no /api prefix
- * - Production web (Docker): Uses /api prefix 
+ * - Production web (Docker): Uses /api prefix
  * - Production native: Uses EXPO_PUBLIC_API_URL baked in at build time, no /api prefix
  */
 
@@ -28,6 +28,19 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+});
+
+let authToken: string | null = null;
+
+export function setAuthToken(token: string | null) {
+  authToken = token;
+}
+
+api.interceptors.request.use((config) => {
+  if (authToken) {
+    config.headers.Authorization = `Bearer ${authToken}`;
+  }
+  return config;
 });
 
 export default api;
