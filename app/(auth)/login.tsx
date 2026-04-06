@@ -1,4 +1,4 @@
-import api from "@/lib/api";
+import api, { setAuthToken } from "@/lib/api";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useState } from "react";
@@ -34,18 +34,22 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
-      const res = await api.post("/login", {
+      const res = await api.post("/auth/login", {
         email: email.trim(),
         password,
       });
 
-      const { user_id, role } = res.data;
+      const { session_token, user } = res.data;
 
-      // Fetch full user info
-      const userRes = await api.get(`/users/${user_id}`);
-      const userData = userRes.data.user;
+      // Set token immediately so subsequent requests are authenticated
+      setAuthToken(session_token);
 
-      await setAuth({ role, userId: user_id, userData });
+      await setAuth({
+        role: user.role || "athlete",
+        userId: user.id,
+        userData: user,
+        token: session_token,
+      });
 
       router.replace("/dashboard");
     } catch (err: any) {
