@@ -20,7 +20,7 @@ const ProfileScreen = () => {
     `${userData?.first_name?.[0] || ""}${userData?.last_name?.[0] || ""}`.toUpperCase();
 
   const handleLogout = () => {
-    setAuth({ role: "", userId: "", userData: null });
+    setAuth({ role: "", userId: "", userData: null, token: "" });
     router.replace("/dashboard/athlete");
   };
 

@@ -24,7 +24,7 @@ const screenWidth = Dimensions.get("window").width;
 const roles = ["All Roles", "Admin", "Coordinator", "Volunteer", "Athlete", "Guardian"];
 
 const UserManagerScreen = () => {
-  const { userData, isReady , role  } = useAuth();
+  const { userData, isReady , role,userId  } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRole, setSelectedRole] = useState("All Roles");
   const [users, setUsers] = useState<any[]>([]);
@@ -73,15 +73,18 @@ const UserManagerScreen = () => {
     }
   };
   const changeVolunteerTask = async(item:any)=>{
-    setSelectedUser(null);
+    
     if (item === null || item._id === null) {
+      setSelectedUser(null);
+      setCurrentTask(null);
       return;
     }
+    
     try{
       const res = await api.post('/volunteer_task_assignment',{
         volunteer_id: selectedUser._id,
         task_id: item._id,
-        assigned_by: userData._id,
+        assigned_by: userId,
         Shift_Start_Date_Time: new Date().toISOString().split('.')[0],
 
       })
@@ -89,6 +92,9 @@ const UserManagerScreen = () => {
     }catch(error){
       console.error('Failed to assign volunteer task', error);
       showToast('Failed to assign volunteer task', 'error');
+    }finally{
+        setSelectedUser(null);
+        setCurrentTask(null);
     }
   }
   
