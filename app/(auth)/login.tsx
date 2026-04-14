@@ -30,7 +30,7 @@ export default function LoginScreen() {
     setToastDuration(duration || 3000);
   };
   const goToQrLogin = () => {
-    router.push("/qr-login");
+    router.push("qr-login" as any);
   };
   const handleLogin = async () => {
     setError("");

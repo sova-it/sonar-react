@@ -34,14 +34,18 @@ export default function QrLogin() {
       setResultMessage("");
 
       try {
-        const res = await api.post("/login/qr", { qr_code: data });
+        const res = await api.post("/auth/qr-login", {
+          qr_value: data,
+        });
 
-        const { user_id, role } = res.data;
+        const result = res.data;
 
-        const userRes = await api.get(`/users/${user_id}`);
-        const userData = userRes.data.user;
-
-        await setAuth({ role, userId: user_id, userData });
+        await setAuth({
+          role: result.user.role,
+          userId: result.user.id,
+          userData: result.user,
+          token: result.session_token || "qr-temp-token",
+        });
 
         tRef1.current = setTimeout(() => {
           setResultMessage("Logged in successfully");
