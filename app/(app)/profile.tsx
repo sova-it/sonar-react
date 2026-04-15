@@ -14,22 +14,27 @@ import { useAuth } from "../../context/auth";
 const screenWidth = Dimensions.get("window").width;
 
 const ProfileScreen = () => {
-  const { userData, setAuth, role, userId, isReady } = useAuth();
+  const { userData, setAuth, role, userId, isReady, clearAuth } = useAuth();
 
   const initials =
     `${userData?.first_name?.[0] || ""}${userData?.last_name?.[0] || ""}`.toUpperCase();
 
   const handleLogout = () => {
-    setAuth({ role: "", userId: "", userData: null });
-    router.replace("/dashboard/athlete");
+    clearAuth();
+    router.push("/");
   };
 
-  if (!isReady || !userData) {
+  if (!isReady) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <Text>Loading...</Text>
       </View>
     );
+  }
+
+  if (!userData) {
+    router.replace("/(app)/dashboard/athlete");
+    return null;
   }
 
   const renderField = (label: string, value: string) => (

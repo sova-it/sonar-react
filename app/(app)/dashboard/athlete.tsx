@@ -81,6 +81,24 @@ const AthleteDashboard = () => {
   }
 
   useEffect(() => {
+    if (!isReady) return;
+
+    if (!role) {
+      return;
+    }
+
+    const normalizedRole = role.toLowerCase();
+
+    if (normalizedRole === "admin") {
+      router.replace("/(app)/dashboard/admin");
+    } else if (normalizedRole === "volunteer") {
+      router.replace("/(app)/dashboard/volunteer");
+    } else if (normalizedRole === "coordinator") {
+      router.replace("/(app)/dashboard/coordinator");
+    }
+  }, [role, isReady]);
+
+  useEffect(() => {
     const fetchEvents = async () => {
       try {
         const [response, response2] = await Promise.all([
