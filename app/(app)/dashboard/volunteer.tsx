@@ -179,8 +179,22 @@ const VolunteerDashboard = () => {
     };
     fetchEvents();
   }, [userId]);
-  const initials =
-    `${userData?.first_name?.[0] ?? ""}${userData?.last_name?.[0] ?? ""}`.toUpperCase();
+  const getInitials = (userData: any) => {
+    if (!userData) return "U";
+    const first = userData.first_name || userData.firstName || "";
+    const last = userData.last_name || userData.lastName || "";
+    if (first || last) {
+      return ((first.charAt(0) || "") + (last.charAt(0) || "")).toUpperCase();
+    }
+    if (userData.name) {
+      const parts = userData.name.split(" ");
+      return (
+        (parts[0]?.charAt(0) || "") + (parts[1]?.charAt(0) || "")
+      ).toUpperCase();
+    }
+    // last fallback: just return "U" for user
+    return "U";
+  };
   const openDetails = (e: UpcomingEvent) => {
     router.push({
       pathname: "/(app)/dashboard/event-details",
@@ -196,28 +210,19 @@ const VolunteerDashboard = () => {
 
   const actionButtons: ActionButton[] = [
     {
-      icon: "checkmark-circle-outline",
-      localImage: require("../../../assets/images/checkin.svg"),
-      label: "Check-in",
-      onPress: () => console.log("Check-in pressed"),
-    },
-    {
       icon: "map",
       localImage: require("../../../assets/images/map.png"),
       label: "Map",
       onPress: () => router.push("/(app)/dashboard/map"),
     },
-  ];
-
-  const navigationButtons: NavigationButton[] = [
     {
-      icon: "qr-code-scanner",
+      icon: "qr-code-outline",
       localImage: require("../../../assets/images/qr.png"),
       label: "QR Code Scanner",
       onPress: () => console.log("QR Code Scanner pressed"),
     },
     {
-      icon: "emoji-events",
+      icon: "trophy-outline",
       localImage: require("../../../assets/images/results.png"),
       label: "Results",
       onPress: () => router.push("/(app)/results/event-selection" as any),
@@ -267,7 +272,7 @@ const VolunteerDashboard = () => {
           <View style={styles.headerRight}>
             <TouchableOpacity onPress={() => router.push("../profile")}>
               <View style={styles.profileInitials}>
-                <Text style={styles.profileText}>{initials}</Text>
+                <Text style={styles.profileText}>{getInitials(userData)}</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -297,30 +302,6 @@ const VolunteerDashboard = () => {
                   <Ionicons name={button.icon} size={48} color="#C4161C" />
                 )}
                 <Text style={styles.buttonLabel}>{button.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Navigation Buttons */}
-        <View style={styles.section}>
-          <View style={styles.buttonGrid}>
-            {navigationButtons.map((button, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.navigationButton}
-                onPress={button.onPress}
-                activeOpacity={0.7}
-              >
-                {button.localImage ? (
-                  <Image
-                    source={button.localImage}
-                    style={{ width: 48, height: 48, resizeMode: "contain" }}
-                  />
-                ) : (
-                  <MaterialIcons name={button.icon!} size={48} color="#000" />
-                )}
-                <Text style={styles.navigationButtonLabel}>{button.label}</Text>
               </TouchableOpacity>
             ))}
           </View>

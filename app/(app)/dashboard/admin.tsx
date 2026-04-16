@@ -60,8 +60,22 @@ const AdminDashboard = () => {
       </View>
     );
   }
-  const initials =
-    `${userData?.first_name?.[0] ?? ""}${userData?.last_name?.[0] ?? ""}`.toUpperCase();
+  const getInitials = (userData: any) => {
+    if (!userData) return "U";
+    const first = userData.first_name || userData.firstName || "";
+    const last = userData.last_name || userData.lastName || "";
+    if (first || last) {
+      return ((first.charAt(0) || "") + (last.charAt(0) || "")).toUpperCase();
+    }
+    if (userData.name) {
+      const parts = userData.name.split(" ");
+      return (
+        (parts[0]?.charAt(0) || "") + (parts[1]?.charAt(0) || "")
+      ).toUpperCase();
+    }
+    // last fallback: just return "U" for user
+    return "U";
+  };
   const upcomingEvents: UpcomingEvent[] = [
     {
       id: 1,
@@ -183,7 +197,7 @@ const AdminDashboard = () => {
           <View style={styles.headerRight}>
             <TouchableOpacity onPress={() => router.push("../profile")}>
               <View style={styles.profileInitials}>
-                <Text style={styles.profileText}>{initials}</Text>
+                <Text style={styles.profileText}>{getInitials(userData)}</Text>
               </View>
             </TouchableOpacity>
           </View>
