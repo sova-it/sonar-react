@@ -359,13 +359,13 @@ const VolunteerDashboard = () => {
 
             <View style={styles.navSpacer} />
 
-            <TouchableOpacity style={styles.navButton} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.navButton} activeOpacity={0.7} onPress={() => router.push("/(app)/inbox" as any)}>
               <MaterialCommunityIcons
                 name="inbox-outline"
                 size={32}
-                color="#C4161C"
+                color="#888888"
               />
-              <Text style={styles.navLabel}>Inbox</Text>
+              <Text style={[styles.navLabel, { color: "#888888" }]}>Inbox</Text>
             </TouchableOpacity>
           </View>
         </View>
