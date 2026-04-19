@@ -106,7 +106,7 @@ const UserManagerScreen = () => {
         searchTerm === "" ||
         fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.member_id.toString().includes(searchTerm);
+        user.member_id.toString()?.includes(searchTerm);
 
       const matchesRole = selectedRole === "All Roles" || user.role.toLowerCase() === selectedRole.toLowerCase();
 
