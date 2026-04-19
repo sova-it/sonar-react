@@ -101,22 +101,13 @@ const AthleteDashboard = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const [response, response2] = await Promise.all([
-          userId ? api.get(`/users/${userId}/events`) : api.get("/events"),
-          userId
-            ? api.get(`/users/${userId}/subevents`)
-            : api.get("/subevents"),
-        ]);
+        const response = await api.get("/public/events-with-subevents");
 
         const defaultImageUrl =
           "https://api.builder.io/api/v1/image/assets/TEMP/d657c7793a39131a1442e864a26a553b086c478b?width=720";
 
         const events = Array.isArray(response.data?.events)
           ? response.data.events
-          : [];
-
-        const subevents = Array.isArray(response2.data?.subevents)
-          ? response2.data.subevents
           : [];
 
         const computeStatus = (item: any) => {
@@ -159,17 +150,26 @@ const AthleteDashboard = () => {
           ),
         });
 
-        const combined = [
-          ...events.map(normalize),
-          ...subevents.map(normalize),
-        ];
+        const combined = events.flatMap((event: any) => {
+          const normalizedEvent = normalize(event);
+
+          const subevents = (event.subevents || []).map((sub: any) =>
+            normalize({
+              ...sub,
+              title: sub.title || event.title,
+              sport: sub.sport || event.sport,
+            }),
+          );
+
+          return [normalizedEvent, ...subevents];
+        });
 
         const upcomingOnly = combined
-          .filter((ev) => ev.status.toLowerCase() === "upcoming")
+          .filter((ev: any) => ev.status?.toLowerCase() === "upcoming")
           .sort(
-            (a, b) =>
-              new Date(a.start_time).getTime() -
-              new Date(b.start_time).getTime(),
+            (a: any, b: any) =>
+              new Date(a.start_time || 0).getTime() -
+              new Date(b.start_time || 0).getTime(),
           )
           .slice(0, 5);
 

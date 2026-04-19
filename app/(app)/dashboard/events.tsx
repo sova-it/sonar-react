@@ -76,10 +76,35 @@ const EventScreen = () => {
   useEffect(() => {
     const fetchAllEvents = async () => {
       try {
-        const [response, response2] = await Promise.all([
-          api.get("/events"),
-          api.get("/subevents"),
-        ]);
+        let events: any[] = [];
+        let subevents: any[] = [];
+
+        if (userId) {
+          // logged in normal endpoints
+          const [response, response2] = await Promise.all([
+            api.get("/events"),
+            api.get("/subevents"),
+          ]);
+
+          events = Array.isArray(response.data?.events)
+            ? response.data.events
+            : [];
+
+          subevents = Array.isArray(response2.data?.subevents)
+            ? response2.data.subevents
+            : [];
+        } else {
+          //  public endpoint
+          const response = await api.get("/public/events-with-subevents");
+
+          const rawEvents = Array.isArray(response.data?.events)
+            ? response.data.events
+            : [];
+
+          // flatten events + subevents
+          events = rawEvents;
+          subevents = rawEvents.flatMap((e: any) => e.subevents || []);
+        }
         const getSportCategory = (event: any) => {
           const matchedCategory = categories.find(
             (cat) => cat.toLowerCase() === event.title?.toLowerCase(),
@@ -90,12 +115,7 @@ const EventScreen = () => {
         };
         const defaultImageUrl =
           "https://api.builder.io/api/v1/image/assets/TEMP/d657c7793a39131a1442e864a26a553b086c478b?width=720";
-        const events = Array.isArray(response.data?.events)
-          ? response.data.events
-          : [];
-        const subevents = Array.isArray(response2.data?.subevents)
-          ? response2.data.subevents
-          : [];
+
         console.log("Raw Events:", JSON.stringify(events[2], null, 2));
         console.log(computeStatus(events[2]));
         const normalizedEvents = events.map((ev: any) => ({
