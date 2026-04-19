@@ -25,34 +25,9 @@ export interface Notification {
   type: NotificationType;
   title: string;
   preview: string;
-  timestamp: string; // ISO string — replace with API field (e.g. created_at)
+  timestamp: string; 
   read: boolean;
 }
-
-// ── API Hook (swap mock data for real fetch here) ─────────────────────────────
-//
-// When connecting to the backend, replace MOCK_NOTIFICATIONS with an API call:
-//
-//   const fetchNotifications = async (userId: string, token: string) => {
-//     const res = await fetch(`http://<host>/users/${userId}/notifications`, {
-//       headers: { Authorization: `Bearer ${token}` },
-//     });
-//     return res.json() as Promise<Notification[]>;
-//   };
-//
-//   const markNotificationRead = (userId: string, token: string, id: string) =>
-//     fetch(`http://<host>/users/${userId}/notifications/${id}/read`, {
-//       method: "PATCH",
-//       headers: { Authorization: `Bearer ${token}` },
-//     });
-//
-//   const deleteNotification = (userId: string, token: string, id: string) =>
-//     fetch(`http://<host>/users/${userId}/notifications/${id}`, {
-//       method: "DELETE",
-//       headers: { Authorization: `Bearer ${token}` },
-//     });
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
 
 function timeAgo(isoString: string): string {
   const diff = Date.now() - new Date(isoString).getTime();
@@ -75,8 +50,7 @@ const TYPE_CONFIG: Record<
   announcement: { color: "#4CAF50", icon: "megaphone-outline", label: "Announcement" },
 };
 
-// ── Mock Data (replace with API fetch) ────────────────────────────────────────
-
+//TODO: Replace with actual notifications
 const MOCK_NOTIFICATIONS: Notification[] = [
   {
     id: "1",
