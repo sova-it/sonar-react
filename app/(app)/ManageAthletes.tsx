@@ -76,12 +76,10 @@ const AthleteManagerScreen = () => {
 
   const renderUser = ({ item }: { item: any }) => {
     const placeholderEmail =
-      `${item.first_name}${item.last_name}@yahoo.com`.toLowerCase();
-    const placeholderPhone = "123-456-7890";
-    const placeholderDOB = "01/01/1990";
+      `${item.last_name}@yahoo.com`.toLowerCase();
+    const placeholderDOB = "01/01/1999";
     const placeholderPronouns = "They/Them";
     const placeholderGuardianName = "John Doe";
-    const placeholderMedicalInfo = "None";
     const placeholderEvent = "100m sprint";
 
     return (
@@ -91,11 +89,9 @@ const AthleteManagerScreen = () => {
           setSelectedUser({
             ...item,
             email: placeholderEmail,
-            phone: placeholderPhone,
             dob: placeholderDOB,
             pronouns: placeholderPronouns,
             guardian_name: placeholderGuardianName,
-            medical_info: placeholderMedicalInfo,
             event: placeholderEvent,
           });
           fetchAthleteEvents(item._id);
@@ -205,7 +201,6 @@ const AthleteManagerScreen = () => {
                 Member ID: {selectedUser?.member_id}
               </Text>
               <Text style={styles.modalInfo}>Email: {selectedUser?.email}</Text>
-              <Text style={styles.modalInfo}>Phone: {selectedUser?.phone}</Text>
               <Text style={styles.modalInfo}>DOB: {selectedUser?.dob}</Text>
               <Text style={styles.modalInfo}>
                 Pronouns: {selectedUser?.pronouns}
@@ -213,9 +208,7 @@ const AthleteManagerScreen = () => {
               <Text style={styles.modalInfo}>
                 Guardian Name: {selectedUser?.guardian_name}
               </Text>
-              <Text style={styles.modalInfo}>
-                Medical Info: {selectedUser?.medical_info}
-              </Text>
+          
 
               {/* EVENT(S) SECTION */}
               <Text style={[styles.modalTitle, { marginTop: 20 }]}>
@@ -226,9 +219,9 @@ const AthleteManagerScreen = () => {
                 <ActivityIndicator size="small" color="#C4161C" />
               ) : athleteEvents.length === 0 ? (
                 <Text
-                  style={{ textAlign: "center", marginTop: 10, color: "#666" }}
+                  style={{ textAlign: "center", marginTop: 10, color: "#C4161C" }}
                 >
-                  No events found for this athlete.
+                  100m Sprint
                 </Text>
               ) : (
                 athleteEvents.map((event) => (
