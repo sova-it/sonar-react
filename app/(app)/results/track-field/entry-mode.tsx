@@ -79,6 +79,7 @@ const TrackFieldEntryScreen = () => {
   // Load athletes for event
   useEffect(() => {
     const loadAthletes = async () => {
+      if (!canEnterScores) return;
       try {
         const endpoint = "/subevents/"+subeventId+"/participants";
         const response = await api.get(endpoint);

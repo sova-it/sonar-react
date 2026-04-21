@@ -1,9 +1,10 @@
+import api from "@/lib/api";
 import { Ionicons } from "@expo/vector-icons";
 import { Buffer } from "buffer";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { router } from "expo-router";
 import { decode as decodeJpeg } from "jpeg-js";
 import jsQR from "jsqr";
 import React, { useCallback, useEffect, useRef, useState } from "react";
@@ -14,30 +15,27 @@ import {
   Text,
   View,
 } from "react-native";
-import { useAuth } from "../../../context/auth";
+import { useAuth } from "../../context/auth";
 
 type Phase = "idle" | "loading" | "confirm" | "error";
 
-export default function QrScannerScreen() {
-  const router = useRouter();
+export default function QrLogin() {
   const [permission, requestPermission] = useCameraPermissions();
-  const { userId: performerId } = useAuth(); // person performing check-in
-  const { subevent_id } = useLocalSearchParams<{ subevent_id?: string }>();
-
   const [scanned, setScanned] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
-  const [scannedUserId, setScannedUserId] = useState<string | null>(null);
   const [resultMessage, setResultMessage] = useState<string>("");
 
-  const tRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { setAuth } = useAuth();
 
-  const EVENT_ID = "6877b78987459c2e6d0409e7"; // Summer Games 2025
+  const tRef1 = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tRef2 = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const extractQRFromImage = async (uri: string): Promise<string | null> => {
     try {
+      // 1. Resize + convert to JPEG + get base64
       const manipulated = await ImageManipulator.manipulateAsync(
         uri,
-        [{ resize: { width: 500 } }],
+        [{ resize: { width: 500 } }], // smaller = faster, 500px is enough for QR
         {
           format: ImageManipulator.SaveFormat.JPEG,
           base64: true,
@@ -47,15 +45,18 @@ export default function QrScannerScreen() {
 
       if (!manipulated.base64) return null;
 
+      // 2. Decode base64 JPEG → raw RGBA pixel data
       const rawBytes = Buffer.from(manipulated.base64, "base64");
       const { data, width, height } = decodeJpeg(rawBytes, {
-        useTArray: true,
+        useTArray: true, // returns Uint8Array instead of Buffer
       });
 
+      // 3. jsQR expects Uint8ClampedArray
       const clampedData = new Uint8ClampedArray(data.buffer);
 
+      // 4. Decode QR
       const result = jsQR(clampedData, width, height, {
-        inversionAttempts: "attemptBoth",
+        inversionAttempts: "attemptBoth", // handles inverted QR codes too
       });
 
       return result?.data ?? null;
@@ -85,8 +86,25 @@ export default function QrScannerScreen() {
         return;
       }
 
-      // reuse your existing scan logic
-      onBarcodeScanned({ data: qrValue, type: "qr" });
+      const response = await api.post("/auth/qr-login", {
+        qr_value: qrValue,
+      });
+
+      const result = response.data;
+
+      await setAuth({
+        role: result.user.role,
+        userId: result.user.id,
+        userData: result.user,
+        token: result.session_token || "qr-temp-token",
+      });
+
+      setResultMessage("Logged in successfully");
+      setPhase("confirm");
+
+      setTimeout(() => {
+        router.replace("/dashboard");
+      }, 2000);
     } catch (err) {
       setResultMessage("Could not process image.");
       setPhase("error");
@@ -100,72 +118,72 @@ export default function QrScannerScreen() {
       setScanned(true);
       setPhase("loading");
       setResultMessage("");
-      setScannedUserId(data);
-
-      const isSubevent = !!subevent_id;
-      const endpoint = isSubevent
-        ? "/api/checkins/subevent"
-        : "/api/checkins/event";
-
-      const body = {
-        type_id: isSubevent ? "subevent" : "event",
-        event_id: EVENT_ID,
-        subevent_id: isSubevent ? subevent_id : null,
-        task_id: null,
-        user_id: data,
-        checkin_time: new Date().toISOString(),
-        checkout_time: null,
-        method: "QR",
-        by: performerId,
-        meta: null,
-        updated_at: null,
-      };
 
       try {
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
+        const res = await api.post("/auth/qr-login", {
+          qr_value: data,
         });
 
-        const json = await res.json().catch(() => ({}));
-        console.log("📡 Check-in response:", res.status, json);
+        const result = res.data;
 
-        // show loading spinner for ~2 seconds before revealing result
-        tRef.current = setTimeout(() => {
-          if (res.status === 201 || res.status === 200) {
-            setResultMessage(json?.message || "Checked in successfully");
-            setPhase("confirm");
-          } else {
-            setResultMessage(
-              json?.detail ||
-                json?.message ||
-                "Error checking in. Please try again.",
-            );
-            setPhase("error");
-          }
+        await setAuth({
+          role: result.user.role,
+          userId: result.user.id,
+          userData: result.user,
+          token: result.session_token || "qr-temp-token",
+        });
+
+        tRef1.current = setTimeout(() => {
+          setResultMessage("Logged in successfully");
+          setPhase("confirm");
         }, 2000);
+
+        tRef2.current = setTimeout(() => {
+          router.replace("/dashboard");
+        }, 2200);
       } catch (err: any) {
-        console.error("❌ Network / fetch error:", err);
-        setTimeout(() => {
-          setResultMessage("Network error while checking in.");
+        let message = "Could not log in. Please try again.";
+
+        switch (err?.response?.status) {
+          case 401:
+            message = "Invalid QR code.";
+            break;
+          case 500:
+            message = "The website has encountered an error.";
+            break;
+          case 403:
+            message = "Account locked or disabled.";
+            break;
+          case 408:
+          case 504:
+            message = "Request timed out. Please try again.";
+            break;
+          case 503:
+            message =
+              "Service temporarily unavailable. Please try again later.";
+            break;
+        }
+
+        tRef1.current = setTimeout(() => {
+          setResultMessage(message);
           setPhase("error");
         }, 2000);
       }
     },
-    [scanned, phase, performerId, subevent_id],
+    [scanned, phase, setAuth],
   );
 
   useEffect(() => {
     return () => {
-      if (tRef.current) clearTimeout(tRef.current);
+      if (tRef1.current) clearTimeout(tRef1.current);
+      if (tRef2.current) clearTimeout(tRef2.current);
     };
   }, []);
 
   if (!permission) {
     return (
       <View style={styles.center}>
-        <Text style={styles.title}>Checking camera permission…</Text>
+        <Text style={styles.title}>Checking camera permission...</Text>
       </View>
     );
   }
@@ -191,7 +209,6 @@ export default function QrScannerScreen() {
 
   const resetAndRescan = () => {
     setScanned(false);
-    setScannedUserId(null);
     setPhase("idle");
     setResultMessage("");
   };
@@ -210,14 +227,10 @@ export default function QrScannerScreen() {
       )}
 
       <View style={styles.topBar}>
-        <Pressable
-          onPress={goBack}
-          style={styles.iconBtn}
-          accessibilityLabel="Close scanner"
-        >
+        <Pressable onPress={goBack} style={styles.iconBtn}>
           <Ionicons name="close" size={28} color="#fff" />
         </Pressable>
-        <Text style={styles.header}>Scan a QR Code</Text>
+        <Text style={styles.header}>QR Login</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -231,28 +244,21 @@ export default function QrScannerScreen() {
       {phase === "loading" && (
         <View style={styles.overlay} pointerEvents="none">
           <ActivityIndicator size="large" />
-          <Text style={styles.loadingText}>Checking in…</Text>
+          <Text style={styles.loadingText}>Logging in...</Text>
         </View>
       )}
 
       {phase === "confirm" && (
         <View style={styles.overlay} pointerEvents="auto">
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Checked In ✅</Text>
+            <Text style={styles.cardTitle}>Logged In</Text>
             <Text style={styles.cardSubtitle}>{resultMessage}</Text>
-
-            <Pressable
-              style={[styles.primaryBtn, { marginTop: 16 }]}
-              onPress={resetAndRescan}
-            >
-              <Text style={styles.primaryBtnText}>Scan Next</Text>
-            </Pressable>
 
             <Pressable
               style={[styles.secondaryBtn, { marginTop: 12 }]}
               onPress={goBack}
             >
-              <Text style={styles.secondaryBtnText}>Done</Text>
+              <Text style={styles.secondaryBtnText}>Back</Text>
             </Pressable>
           </View>
         </View>
@@ -261,16 +267,14 @@ export default function QrScannerScreen() {
       {phase === "error" && (
         <View style={styles.overlay} pointerEvents="auto">
           <View style={styles.card}>
-            <Text style={[styles.cardTitle, { color: "#ff4d4d" }]}>
-              Error ❌
-            </Text>
+            <Text style={[styles.cardTitle, { color: "#ff4d4d" }]}>Error</Text>
             <Text style={styles.cardSubtitle}>{resultMessage}</Text>
 
             <Pressable
               style={[styles.primaryBtn, { marginTop: 16 }]}
               onPress={resetAndRescan}
             >
-              <Text style={styles.primaryBtnText}>Try Again</Text>
+              <Text style={styles.primaryBtnText}>Scan Again</Text>
             </Pressable>
 
             <Pressable
@@ -282,33 +286,11 @@ export default function QrScannerScreen() {
           </View>
         </View>
       )}
-      <View
-        style={{
-          position: "absolute",
-          bottom: 40,
-          left: 0,
-          right: 0,
-          alignItems: "center",
-        }}
-      >
-        <Pressable
-          onPress={handleUploadQR}
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 8,
-            backgroundColor: "rgba(0,0,0,0.6)",
-            paddingHorizontal: 16,
-            paddingVertical: 12,
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: "#666",
-          }}
-        >
+
+      <View style={styles.bottomContainer}>
+        <Pressable style={styles.uploadBtn} onPress={handleUploadQR}>
           <Ionicons name="image-outline" size={20} color="#fff" />
-          <Text style={{ color: "#fff", fontWeight: "600" }}>
-            Upload QR Code
-          </Text>
+          <Text style={styles.uploadText}>Upload QR Code</Text>
         </Pressable>
       </View>
     </View>
@@ -422,9 +404,29 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 6,
   },
-  cardDetails: {
-    color: "#808080",
-    fontSize: 12,
-    textAlign: "center",
+  bottomContainer: {
+    position: "absolute",
+    bottom: 40,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+  },
+
+  uploadBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#666",
+  },
+
+  uploadText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "600",
   },
 });

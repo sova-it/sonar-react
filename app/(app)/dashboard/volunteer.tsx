@@ -1,24 +1,24 @@
-import React, { useEffect, useState } from "react";
 import { router } from "expo-router";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "../../../context/auth";
 
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-  StatusBar,
-  SafeAreaView,
-  Pressable,
-} from "react-native";
+import api from "@/lib/api";
 import {
   Ionicons,
-  MaterialIcons,
   MaterialCommunityIcons,
+  MaterialIcons,
 } from "@expo/vector-icons";
-import axios from "axios";
+import {
+  Image,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface UpcomingEvent {
   id: number;
@@ -28,7 +28,7 @@ interface UpcomingEvent {
   image: any;
   sport?: string;
   start_time?: string; // ISO or human-readable, whichever your details screen expects
-  end_time?: string;   // ISO or human-readable, whichever your details screen expects
+  end_time?: string; // ISO or human-readable, whichever your details screen expects
 }
 
 interface ActionButton {
@@ -45,8 +45,31 @@ interface NavigationButton {
   localImage?: any;
 }
 
+const sportConfig: Record<string, any> = {
+  running: { icon: "run" },
+  bowling: { icon: "bowling" },
+  swimming: { icon: "swim" },
+  softball: { icon: "baseball" },
+  tennis: {
+    image: require("../../../assets/images/tennispixel.png"),
+  },
+};
+
+const getSportKey = (sport?: string) =>
+  sport?.toLowerCase().includes("tennis")
+    ? "tennis"
+    : sport?.toLowerCase().includes("swim")
+      ? "swimming"
+      : sport?.toLowerCase().includes("bowl")
+        ? "bowling"
+        : sport?.toLowerCase().includes("run")
+          ? "running"
+          : sport?.toLowerCase().includes("soft")
+            ? "softball"
+            : "running";
+
 const VolunteerDashboard = () => {
-  const { userData, isReady , role,userId  } = useAuth();
+  const { userData, isReady, role, userId } = useAuth();
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEvent[]>([]);
   useEffect(() => {
     if (isReady && role !== "volunteer") {
@@ -61,110 +84,78 @@ const VolunteerDashboard = () => {
       </View>
     );
   }
-  useEffect(() => 
-    {
-      const fetchEvents = async () => {
+  useEffect(() => {
+    if (!userId) return;
 
-        try {
-          const [response,response2] = await Promise.all([
-            axios.get("http://127.0.0.1:8000/users/" + userId + "/events"),
-            axios.get("http://127.0.0.1:8000/users/" + userId + "/subevents"),
-        ]);
+    const fetchEvents = async () => {
+      try {
+        const response = await api.get("/events");
+        const allEvents = response.data.events || [];
 
-          console.log("Events response:", response.data);
-          console.log("Subevents response:", response2.data);
+        const userEvents: any[] = [];
 
-          const defaultImageUrl = "https://api.builder.io/api/v1/image/assets/TEMP/d657c7793a39131a1442e864a26a553b086c478b?width=720";
-          const events = Array.isArray(response.data?.events) ? response.data.events : [];
-          const subevents = Array.isArray(response2.data?.subevents) ? response2.data.subevents : [];
+        for (const event of allEvents) {
+          try {
+            const res = await api.get(`/events/${event._id}/participants`);
+            const participants = res.data.items || [];
 
-          console.log("Events count:", events.length);
-          console.log("Subevents count:", subevents.length);
+            const isUserInEvent = participants.some(
+              (p: any) => p.email === userData?.email,
+            );
 
-          const normalizedEvents = events.map((ev: any) => {
-            const computeStatus = (item: any) => {
-              const startRaw = item.startTime ?? item.start_time;
-              const endRaw = item.endTime ?? item.end_time;
+            if (isUserInEvent) {
+              const defaultImageUrl =
+                "https://api.builder.io/api/v1/image/assets/TEMP/d657c7793a39131a1442e864a26a553b086c478b?width=720";
 
-              if (!startRaw) return "upcoming";
-
-              const startTs = Date.parse(startRaw);
-              const endTs = endRaw ? Date.parse(endRaw) : NaN;
-              const now = Date.now();
-
-              if (isNaN(startTs)) return "upcoming";
-
-              if (!isNaN(endTs)) {
-                if (now < startTs) return "upcoming";
-                if (now > endTs) return "completed";
-                return "ongoing";
-              }
-
-              return startTs < now ? "completed" : "upcoming";
-            };
-
-            return {
-              ...ev,
-              id: String(ev._id || ev.id),
-              title: ev.title,
-              image: ev.imageUrl || defaultImageUrl,
-              status: computeStatus(ev),
-              sport: ev.sport || ev.title,
-              start_time: ev.startTime || ev.start_time,
-              end_time: ev.endTime || ev.end_time,
-              date: new Date(ev.startTime || ev.start_time).toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'}),
-              time: new Date(ev.startTime || ev.start_time).toLocaleTimeString('en-US', {hour: 'numeric', minute: 'numeric', hour12: true}),
-            };
-          });
-          const normalizedSubevents = subevents.map((sub: any) => {
-            const computeStatus = (item: any) => {
-              const startRaw = item.start_time ?? item.startTime;
-              const endRaw = item.end_time ?? item.endTime;
-
-              if (!startRaw) return "upcoming";
-
-              const startTs = Date.parse(startRaw);
-              const endTs = endRaw ? Date.parse(endRaw) : NaN;
-              const now = Date.now();
-
-              if (isNaN(startTs)) return "upcoming";
-
-              if (!isNaN(endTs)) {
-                if (now < startTs) return "upcoming";
-                if (now > endTs) return "completed";
-                return "ongoing";
-              }
-
-              return startTs < now ? "completed" : "upcoming";
-            };
-
-            return {
-              ...sub,
-              id: String(sub._id || sub.id),
-              title: sub.title,
-              image: sub.imageUrl || defaultImageUrl,
-              status: computeStatus(sub),
-              sport: sub.sport || sub.title,
-              start_time: sub.startTime || sub.start_time,
-              end_time: sub.endTime || sub.end_time,
-              date: new Date(sub.start_time || sub.startTime).toLocaleDateString('en-US', {year: 'numeric', month: 'long', day: 'numeric'}),
-              time: new Date(sub.start_time || sub.startTime).toLocaleTimeString('en-US', {hour: 'numeric', minute: 'numeric', hour12: true}),
-            };
-          });
-
-          const combined = [...normalizedEvents, ...normalizedSubevents];
-          const upcomingOnly: UpcomingEvent[] = combined.filter((ev:any) => (ev.status ?? "").toLowerCase() === "upcoming");
-          setUpcomingEvents(upcomingOnly);
-          console.log("Upcoming:" + combined);
-          } catch (err) {
-          console.error("Error fetching events:", err);
+              userEvents.push({
+                ...event,
+                id: String(event._id || event.id || ""),
+                title: event.title,
+                sport: event.sport || event.title,
+                image: event.imageUrl || defaultImageUrl,
+                start_time: event.start_time,
+                end_time: event.end_time,
+                date: new Date(event.start_time).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                }),
+                time: new Date(event.start_time).toLocaleTimeString("en-US", {
+                  hour: "numeric",
+                  minute: "numeric",
+                  hour12: true,
+                }),
+              });
+            }
+          } catch (err) {}
         }
-      };
-      fetchEvents();
-    }, [userId]
-  );
-    const initials = `${userData?.first_name?.[0] ?? ""}${userData?.last_name?.[0] ?? ""}`.toUpperCase();
-    const openDetails = (e: UpcomingEvent) => {
+
+        setUpcomingEvents(userEvents);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchEvents();
+  }, [userId]);
+  const getInitials = (userData: any) => {
+    if (!userData) return "U";
+    const first = userData.first_name || userData.firstName || "";
+    const last = userData.last_name || userData.lastName || "";
+    if (first || last) {
+      return ((first.charAt(0) || "") + (last.charAt(0) || "")).toUpperCase();
+    }
+    if (userData.name) {
+      const parts = userData.name.split(" ");
+      return (
+        (parts[0]?.charAt(0) || "") +
+        (parts[1]?.charAt(0) || parts[0]?.charAt(1) || "")
+      ).toUpperCase();
+    }
+    // last fallback: just return "U" for user
+    return "U";
+  };
+  const openDetails = (e: UpcomingEvent) => {
     router.push({
       pathname: "/(app)/dashboard/event-details",
       params: {
@@ -179,40 +170,24 @@ const VolunteerDashboard = () => {
 
   const actionButtons: ActionButton[] = [
     {
-      icon: "checkmark-circle-outline",
-      localImage: require("../../../assets/images/checkin.svg"),
-      label: "Check-in",
-      onPress: () => console.log("Check-in pressed"),
-    },
-    {
       icon: "map",
       localImage: require("../../../assets/images/map.png"),
       label: "Map",
-      onPress: () => console.log("Map pressed"),
+      onPress: () => router.push("/(app)/dashboard/map"),
     },
-  ];
-
-  const navigationButtons: NavigationButton[] = [
     {
-      icon: "qr-code-scanner",
+      icon: "qr-code-outline",
       localImage: require("../../../assets/images/qr.png"),
       label: "QR Code Scanner",
-      onPress: () => console.log("QR Code Scanner pressed"),
+      onPress: () => router.push("/(app)/dashboard/QRScanner"),
     },
     {
-      icon: "emoji-events",
+      icon: "trophy-outline",
       localImage: require("../../../assets/images/results.png"),
       label: "Results",
       onPress: () => router.push("/(app)/results/event-selection" as any),
     },
   ];
-
-  const TennisIcon = () => (
-    <Image
-      source={require("../../../assets/images/tennispixel.png")}
-      style={styles.tennisIconImage}
-    />
-  );
 
   const EventCard = ({
     event,
@@ -225,7 +200,21 @@ const VolunteerDashboard = () => {
       <Image source={event.image} style={styles.eventImage} />
       <View style={styles.eventContent}>
         <View style={styles.eventHeader}>
-          <TennisIcon />
+          {(() => {
+            const sportKey = getSportKey(event.sport);
+            const config = sportConfig[sportKey];
+
+            return config.image ? (
+              <Image source={config.image} style={styles.tennisIconImage} />
+            ) : (
+              <MaterialCommunityIcons
+                name={config.icon}
+                size={45}
+                color="#C4161C"
+                style={{ marginRight: 12 }}
+              />
+            );
+          })()}
           <View style={styles.eventTitleContainer}>
             <Text style={styles.eventTitle}>{event.title}</Text>
           </View>
@@ -250,7 +239,7 @@ const VolunteerDashboard = () => {
           <View style={styles.headerRight}>
             <TouchableOpacity onPress={() => router.push("../profile")}>
               <View style={styles.profileInitials}>
-                <Text style={styles.profileText}>{initials}</Text>
+                <Text style={styles.profileText}>{getInitials(userData)}</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -261,7 +250,6 @@ const VolunteerDashboard = () => {
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
       >
-        
         {/* Action Buttons */}
         <View style={styles.section}>
           <View style={styles.buttonGrid}>
@@ -286,30 +274,6 @@ const VolunteerDashboard = () => {
           </View>
         </View>
 
-        {/* Navigation Buttons */}
-        <View style={styles.section}>
-          <View style={styles.buttonGrid}>
-            {navigationButtons.map((button, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.navigationButton}
-                onPress={button.onPress}
-                activeOpacity={0.7}
-              >
-                {button.localImage ? (
-                  <Image
-                    source={button.localImage}
-                    style={{ width: 48, height: 48, resizeMode: "contain" }}
-                  />
-                ) : (
-                  <MaterialIcons name={button.icon!} size={48} color="#000" />
-                )}
-                <Text style={styles.navigationButtonLabel}>{button.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
         {/* Upcoming Events Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Your upcoming events</Text>
@@ -319,15 +283,15 @@ const VolunteerDashboard = () => {
                 <Ionicons name="calendar-outline" size={48} color="#999" />
                 <Text style={styles.noEventsText}>No upcoming events</Text>
               </View>
-              ) : (
+            ) : (
               upcomingEvents.map((event) => (
-              <EventCard
-                key={event.id}
-                event={event}
-                onPress={() => openDetails(event)}
-              />
-            ))
-          )}
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  onPress={() => openDetails(event)}
+                />
+              ))
+            )}
           </View>
         </View>
 
@@ -359,13 +323,17 @@ const VolunteerDashboard = () => {
 
             <View style={styles.navSpacer} />
 
-            <TouchableOpacity style={styles.navButton} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.navButton}
+              activeOpacity={0.7}
+              onPress={() => router.push("/(app)/inbox" as any)}
+            >
               <MaterialCommunityIcons
                 name="inbox-outline"
                 size={32}
-                color="#C4161C"
+                color="#888888"
               />
-              <Text style={styles.navLabel}>Inbox</Text>
+              <Text style={[styles.navLabel, { color: "#888888" }]}>Inbox</Text>
             </TouchableOpacity>
           </View>
         </View>

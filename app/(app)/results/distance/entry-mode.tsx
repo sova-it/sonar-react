@@ -83,6 +83,7 @@ const DistanceEntryScreen = () => {
 
   useEffect(() => {
     const loadAthletes = async () => {
+      if (!canEnterScores) return;
       try {
         const endpoint = "/subevents/"+subeventId+"/participants";
         const response = await api.get(endpoint);
@@ -100,8 +101,7 @@ const DistanceEntryScreen = () => {
         showToast('Failed to load athletes', 'error', 3000);
       }
     };
-
-    loadAthletes();
+    loadAthletes()
   }, [eventId, subeventId]);
 
   useEffect(() => {
@@ -260,6 +260,7 @@ const DistanceEntryScreen = () => {
       showToast('Draft saved successfully', 'success');
     } catch (error) {
       showToast('Failed to save draft', 'error', 3000);
+      
     }
   };
 

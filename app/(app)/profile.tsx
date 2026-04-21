@@ -14,14 +14,19 @@ import { useAuth } from "../../context/auth";
 const screenWidth = Dimensions.get("window").width;
 
 const ProfileScreen = () => {
-  const { userData, setAuth, role, userId, isReady } = useAuth();
+  const { userData, role, userId, isReady, clearAuth } = useAuth();
 
-  const initials =
-    `${userData?.first_name?.[0] || ""}${userData?.last_name?.[0] || ""}`.toUpperCase();
+  const fullName = userData?.name || "";
+  const nameParts = fullName.split(" ");
+
+  const firstName = userData?.first_name || nameParts[0] || "";
+  const lastName = userData?.last_name || nameParts[1] || "";
+
+  const initials = `${firstName[0] || ""}${lastName[0] || ""}`.toUpperCase();
 
   const handleLogout = () => {
-    setAuth({ role: "", userId: "", userData: null });
-    router.replace("/dashboard/athlete");
+    clearAuth();
+    router.push("/");
   };
 
   if (!isReady || !userData) {
@@ -32,10 +37,15 @@ const ProfileScreen = () => {
     );
   }
 
+  if (!userData) {
+    router.replace("/(app)/dashboard/athlete");
+    return null;
+  }
+
   const renderField = (label: string, value: string) => (
     <View style={styles.card}>
       <Text style={styles.cardLabel}>{label}</Text>
-      <Text style={styles.value}>{value}</Text>
+      <Text style={styles.value}>{value || "N/A"}</Text>
     </View>
   );
 
@@ -65,29 +75,37 @@ const ProfileScreen = () => {
           </View>
 
           <Text style={styles.nameText}>
-            {userData.first_name} {userData.last_name}
+            {firstName || "Unknown"} {lastName}
           </Text>
+
           <Text style={styles.roleText}>
-            ({userData.pronouns}) | {userData.role}
+            ({userData.pronouns || ""}) |{" "}
+            {userData.role
+              ? userData.role.charAt(0).toUpperCase() + userData.role.slice(1)
+              : ""}
           </Text>
-          <Text style={styles.memberId}>Member ID: {userData.member_id}</Text>
+
+          <Text style={styles.memberId}>
+            Member ID: {userData.member_id || userData.id || ""}
+          </Text>
         </View>
-        {
-          <View style={styles.qrcode}>
-            <QRCode
-              value={userId ?? "null"}
-              size={200}
-              color="#000000ff"
-              backgroundColor="#fff"
-            />
-          </View>
-        }
+
+        <View style={styles.qrcode}>
+          <QRCode
+            value={userId ?? "null"}
+            size={200}
+            color="#000000ff"
+            backgroundColor="#fff"
+          />
+        </View>
+
         <Text style={styles.sectionTitle}>Personal Information</Text>
-        {renderField("First Name", userData.first_name)}
-        {renderField("Last Name", userData.last_name)}
-        {renderField("Phone Number", userData.phone)}
-        {renderField("Email", userData.email)}
-        {renderField("Pronouns", userData.pronouns)}
+
+        {renderField("First Name", firstName)}
+        {renderField("Last Name", lastName)}
+        {renderField("Phone Number", userData.phone || "")}
+        {renderField("Email", userData.email || "")}
+        {renderField("Pronouns", userData.pronouns || "")}
 
         {role === "guardian" &&
           renderField("Linked Athlete ID", userData.linked_athlete_id || "")}

@@ -1,22 +1,22 @@
-import React, { useEffect } from "react";
-import { router } from "expo-router";
-import { useAuth } from "../../../context/auth";
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  StyleSheet,
-  StatusBar,
-  SafeAreaView,
-  Pressable,
-} from "react-native";
 import {
   Ionicons,
-  MaterialIcons,
   MaterialCommunityIcons,
+  MaterialIcons,
 } from "@expo/vector-icons";
+import { router } from "expo-router";
+import React, { useEffect } from "react";
+import {
+  Image,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useAuth } from "../../../context/auth";
 
 // this
 interface UpcomingEvent {
@@ -29,7 +29,6 @@ interface UpcomingEvent {
   start_time?: string;
   end_time?: string;
 }
-
 
 interface ActionButton {
   icon: keyof typeof Ionicons.glyphMap;
@@ -46,7 +45,7 @@ interface NavigationButton {
 }
 
 const AdminDashboard = () => {
-  const { userData, isReady , role  } = useAuth();
+  const { userData, isReady, role } = useAuth();
 
   useEffect(() => {
     if (isReady && role !== "admin") {
@@ -61,7 +60,22 @@ const AdminDashboard = () => {
       </View>
     );
   }
-  const initials = `${userData?.first_name?.[0] ?? ""}${userData?.last_name?.[0] ?? ""}`.toUpperCase();
+  const getInitials = (userData: any) => {
+    if (!userData) return "U";
+    const first = userData.first_name || userData.firstName || "";
+    const last = userData.last_name || userData.lastName || "";
+    if (first || last) {
+      return ((first.charAt(0) || "") + (last.charAt(0) || "")).toUpperCase();
+    }
+    if (userData.name) {
+      const parts = userData.name.split(" ");
+      return (
+        (parts[0]?.charAt(0) || "") + (parts[1]?.charAt(0) || "")
+      ).toUpperCase();
+    }
+    // last fallback: just return "U" for user
+    return "U";
+  };
   const upcomingEvents: UpcomingEvent[] = [
     {
       id: 1,
@@ -79,16 +93,14 @@ const AdminDashboard = () => {
       title: "Green Dot Singles Match",
       date: "Friday, June 20",
       time: "3:30 PM",
-      image:
-        require("../../../assets/images/tennis.png"),
+      image: require("../../../assets/images/tennis.png"),
     },
     {
       id: 3,
       title: "Match Play Singles",
       date: "Friday, June 20",
       time: "5:00 PM",
-      image:
-        require("../../../assets/images/tennis.png"),
+      image: require("../../../assets/images/tennis.png"),
     },
   ];
 
@@ -106,7 +118,6 @@ const AdminDashboard = () => {
     });
   };
 
-
   const actionButtons: ActionButton[] = [
     {
       icon: "checkmark-circle-outline",
@@ -121,42 +132,40 @@ const AdminDashboard = () => {
       onPress: () => console.log("Event Updates pressed"),
     },
     {
-    icon: "clipboard-outline",
-    localImage: require("../../../assets/images/manageusers.svg"),
-    label: "Manage Users",
-    onPress: () => router.push("/ManageUsers"),
+      icon: "clipboard-outline",
+      localImage: require("../../../assets/images/manageusers.svg"),
+      label: "Manage Users",
+      onPress: () => router.push("/ManageUsers"),
     },
   ];
 
   const navigationButtons: NavigationButton[] = [
     {
       icon: "map",
-      localImage: require("../../../assets/images/map.png"), 
+      localImage: require("../../../assets/images/map.png"),
       label: "Map",
-      onPress: () => console.log("Map pressed"),
+      onPress: () => router.push("/(app)/dashboard/map"),
     },
     {
       icon: "qr-code-scanner",
-      localImage: require("../../../assets/images/qr.png"), 
+      localImage: require("../../../assets/images/qr.png"),
       label: "QR Code Scanner",
       onPress: () => router.push("/(app)/dashboard/QRScanner"),
     },
     {
       icon: "emoji-events",
-      localImage: require("../../../assets/images/results.png"), 
+      localImage: require("../../../assets/images/results.png"),
       label: "Results",
       onPress: () => router.push("/(app)/results/event-selection" as any),
     },
   ];
 
   const TennisIcon = () => (
-  <Image
+    <Image
       source={require("../../../assets/images/tennispixel.png")}
       style={styles.tennisIconImage}
     />
   );
-
-
 
   const EventCard = ({ event }: { event: UpcomingEvent }) => (
     <View style={styles.eventCard}>
@@ -188,7 +197,7 @@ const AdminDashboard = () => {
           <View style={styles.headerRight}>
             <TouchableOpacity onPress={() => router.push("../profile")}>
               <View style={styles.profileInitials}>
-                <Text style={styles.profileText}>{initials}</Text>
+                <Text style={styles.profileText}>{getInitials(userData)}</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -221,7 +230,10 @@ const AdminDashboard = () => {
                 activeOpacity={0.7}
               >
                 {button.localImage ? (
-                  <Image source={button.localImage} style={{ width: 48, height: 48, resizeMode: "contain", }} />
+                  <Image
+                    source={button.localImage}
+                    style={{ width: 48, height: 48, resizeMode: "contain" }}
+                  />
                 ) : (
                   <Ionicons name={button.icon} size={48} color="#C4161C" />
                 )}
@@ -242,7 +254,10 @@ const AdminDashboard = () => {
                 activeOpacity={0.7}
               >
                 {button.localImage ? (
-                  <Image source={button.localImage} style={{ width: 48, height: 48, resizeMode: "contain", }} />
+                  <Image
+                    source={button.localImage}
+                    style={{ width: 48, height: 48, resizeMode: "contain" }}
+                  />
                 ) : (
                   <MaterialIcons name={button.icon!} size={48} color="#000" />
                 )}
@@ -279,7 +294,7 @@ const AdminDashboard = () => {
           <View style={styles.profilePicture}>
             <Pressable onPress={() => router.push("/(app)/dashboard/events")}>
               <Image
-                source={require('../../../assets/images/events.png')}
+                source={require("../../../assets/images/events.png")}
                 style={styles.profileImage}
               />
             </Pressable>
@@ -296,13 +311,13 @@ const AdminDashboard = () => {
 
             <View style={styles.navSpacer} />
 
-            <TouchableOpacity style={styles.navButton} activeOpacity={0.7}>
+            <TouchableOpacity style={styles.navButton} activeOpacity={0.7} onPress={() => router.push("/(app)/inbox" as any)}>
               <MaterialCommunityIcons
                 name="inbox-outline"
                 size={32}
-                color="#C4161C"
+                color="#888888"
               />
-              <Text style={styles.navLabel}>Inbox</Text>
+              <Text style={[styles.navLabel, { color: "#888888" }]}>Inbox</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -573,8 +588,8 @@ const styles = StyleSheet.create({
   tennisIconImage: {
     width: 48,
     height: 48,
-    resizeMode: 'contain',
-    marginRight: 12,       
+    resizeMode: "contain",
+    marginRight: 12,
   },
 });
 
