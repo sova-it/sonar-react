@@ -1,19 +1,19 @@
-import React, { useState, useRef, useEffect } from "react";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useAuth } from "../../context/auth";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  View,
-  Text,
+  Animated,
   FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
+  Modal,
   SafeAreaView,
   ScrollView,
-  Animated,
-  Modal,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { useAuth } from "../../context/auth";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -25,7 +25,7 @@ export interface Notification {
   type: NotificationType;
   title: string;
   preview: string;
-  timestamp: string; 
+  timestamp: string;
   read: boolean;
 }
 
@@ -45,9 +45,13 @@ const TYPE_CONFIG: Record<
   NotificationType,
   { color: string; icon: keyof typeof Ionicons.glyphMap; label: string }
 > = {
-  event:        { color: "#C4161C", icon: "calendar-outline",  label: "Event" },
-  assignment:   { color: "#2196F3", icon: "person-outline",    label: "Assignment" },
-  announcement: { color: "#4CAF50", icon: "megaphone-outline", label: "Announcement" },
+  event: { color: "#C4161C", icon: "calendar-outline", label: "Event" },
+  assignment: { color: "#2196F3", icon: "person-outline", label: "Assignment" },
+  announcement: {
+    color: "#4CAF50",
+    icon: "megaphone-outline",
+    label: "Announcement",
+  },
 };
 
 //TODO: Replace with actual notifications
@@ -56,7 +60,8 @@ const MOCK_NOTIFICATIONS: Notification[] = [
     id: "1",
     type: "event",
     title: "Women's Tennis Venue Change",
-    preview: "Women's tennis has been moved to Robins Center. Please update your schedules accordingly.",
+    preview:
+      "Women's tennis has been moved to Robins Center. Please update your schedules accordingly.",
     timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
     read: false,
   },
@@ -64,7 +69,8 @@ const MOCK_NOTIFICATIONS: Notification[] = [
     id: "2",
     type: "assignment",
     title: "You've been assigned to Red Ball Singles",
-    preview: "You have a new volunteer assignment for Red Ball Singles Match on June 20 at 2:00 PM.",
+    preview:
+      "You have a new volunteer assignment for Red Ball Singles Match on June 20 at 2:00 PM.",
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
     read: false,
   },
@@ -72,7 +78,8 @@ const MOCK_NOTIFICATIONS: Notification[] = [
     id: "3",
     type: "announcement",
     title: "Welcome to Sonar 2025!",
-    preview: "The 2025 Special Olympics Virginia State Summer Games are officially underway. Thank you for participating!",
+    preview:
+      "The 2025 Special Olympics Virginia State Summer Games are officially underway. Thank you for participating!",
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
     read: false,
   },
@@ -80,7 +87,8 @@ const MOCK_NOTIFICATIONS: Notification[] = [
     id: "4",
     type: "event",
     title: "Green Dot Singles Match Reminder",
-    preview: "Your event starts in 1 hour. Please arrive 15 minutes early for warm-ups.",
+    preview:
+      "Your event starts in 1 hour. Please arrive 15 minutes early for warm-ups.",
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(),
     read: true,
   },
@@ -88,7 +96,8 @@ const MOCK_NOTIFICATIONS: Notification[] = [
     id: "5",
     type: "assignment",
     title: "Assignment Updated: Match Play Singles",
-    preview: "Your volunteer role for Match Play Singles has been updated. Check-in location is now Gate C.",
+    preview:
+      "Your volunteer role for Match Play Singles has been updated. Check-in location is now Gate C.",
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 27).toISOString(),
     read: true,
   },
@@ -96,7 +105,8 @@ const MOCK_NOTIFICATIONS: Notification[] = [
     id: "6",
     type: "event",
     title: "Match Play Singles — Start Time Change",
-    preview: "Match Play Singles has been moved from 5:00 PM to 4:30 PM. Please plan accordingly.",
+    preview:
+      "Match Play Singles has been moved from 5:00 PM to 4:30 PM. Please plan accordingly.",
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 30).toISOString(),
     read: true,
   },
@@ -104,7 +114,8 @@ const MOCK_NOTIFICATIONS: Notification[] = [
     id: "7",
     type: "announcement",
     title: "Volunteer Appreciation Dinner",
-    preview: "All volunteers are invited to the appreciation dinner on Saturday at 7:00 PM in the main hall.",
+    preview:
+      "All volunteers are invited to the appreciation dinner on Saturday at 7:00 PM in the main hall.",
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
     read: true,
   },
@@ -112,7 +123,8 @@ const MOCK_NOTIFICATIONS: Notification[] = [
     id: "8",
     type: "event",
     title: "Event Results Posted",
-    preview: "Results for the Red Ball Singles Match are now available. Tap to view the full scoreboard.",
+    preview:
+      "Results for the Red Ball Singles Match are now available. Tap to view the full scoreboard.",
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 96).toISOString(),
     read: true,
   },
@@ -126,7 +138,11 @@ interface NotificationCardProps {
   onPress: (item: Notification) => void;
 }
 
-const NotificationCard = ({ item, animValue, onPress }: NotificationCardProps) => {
+const NotificationCard = ({
+  item,
+  animValue,
+  onPress,
+}: NotificationCardProps) => {
   const config = TYPE_CONFIG[item.type];
 
   return (
@@ -155,13 +171,21 @@ const NotificationCard = ({ item, animValue, onPress }: NotificationCardProps) =
         <View style={[styles.colorBar, { backgroundColor: config.color }]} />
 
         {/* Icon */}
-        <View style={[styles.iconContainer, { backgroundColor: config.color + "18" }]}>
+        <View
+          style={[
+            styles.iconContainer,
+            { backgroundColor: config.color + "18" },
+          ]}
+        >
           <Ionicons name={config.icon} size={22} color={config.color} />
         </View>
 
         {/* Content */}
         <View style={styles.cardContent}>
-          <Text style={[styles.cardTitle, item.read && styles.cardTitleRead]} numberOfLines={1}>
+          <Text
+            style={[styles.cardTitle, item.read && styles.cardTitleRead]}
+            numberOfLines={1}
+          >
             {item.title}
           </Text>
           <Text style={styles.cardPreview} numberOfLines={2}>
@@ -196,20 +220,31 @@ const DetailModal = ({ notification, onClose, onDelete }: DetailModalProps) => {
       <View style={styles.modalOverlay}>
         <View style={styles.modalCard}>
           {/* X button */}
-          <TouchableOpacity style={styles.modalClose} onPress={onClose} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.modalClose}
+            onPress={onClose}
+            activeOpacity={0.7}
+          >
             <Ionicons name="close" size={22} color="#555" />
           </TouchableOpacity>
 
           <ScrollView showsVerticalScrollIndicator={false}>
             {/* Icon */}
             <View style={styles.modalIconWrapper}>
-              <View style={[styles.modalIconCircle, { backgroundColor: config.color + "18" }]}>
+              <View
+                style={[
+                  styles.modalIconCircle,
+                  { backgroundColor: config.color + "18" },
+                ]}
+              >
                 <Ionicons name={config.icon} size={36} color={config.color} />
               </View>
             </View>
 
             {/* Type badge */}
-            <View style={[styles.modalTypeBadge, { backgroundColor: config.color }]}>
+            <View
+              style={[styles.modalTypeBadge, { backgroundColor: config.color }]}
+            >
               <Text style={styles.modalTypeBadgeText}>{config.label}</Text>
             </View>
 
@@ -217,7 +252,9 @@ const DetailModal = ({ notification, onClose, onDelete }: DetailModalProps) => {
             <Text style={styles.modalTitle}>{notification.title}</Text>
 
             {/* Timestamp */}
-            <Text style={styles.modalTimestamp}>{timeAgo(notification.timestamp)}</Text>
+            <Text style={styles.modalTimestamp}>
+              {timeAgo(notification.timestamp)}
+            </Text>
 
             {/* Full body */}
             <Text style={styles.modalBody}>{notification.preview}</Text>
@@ -229,7 +266,12 @@ const DetailModal = ({ notification, onClose, onDelete }: DetailModalProps) => {
             activeOpacity={0.8}
             onPress={() => onDelete(notification.id)}
           >
-            <Ionicons name="trash-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+            <Ionicons
+              name="trash-outline"
+              size={18}
+              color="#FFFFFF"
+              style={{ marginRight: 6 }}
+            />
             <Text style={styles.deleteButtonText}>Delete Notification</Text>
           </TouchableOpacity>
         </View>
@@ -244,12 +286,14 @@ const FILTERS: FilterType[] = ["All", "Unread", "Events", "Assignments"];
 
 export default function InboxScreen() {
   const { userData } = useAuth();
-  const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
+  const [notifications, setNotifications] =
+    useState<Notification[]>(MOCK_NOTIFICATIONS);
   const [activeFilter, setActiveFilter] = useState<FilterType>("All");
-  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  const [selectedNotification, setSelectedNotification] =
+    useState<Notification | null>(null);
 
   const animValues = useRef(
-    MOCK_NOTIFICATIONS.map(() => new Animated.Value(0))
+    MOCK_NOTIFICATIONS.map(() => new Animated.Value(0)),
   ).current;
 
   useEffect(() => {
@@ -259,7 +303,7 @@ export default function InboxScreen() {
         duration: 350,
         delay: i * 55,
         useNativeDriver: true,
-      })
+      }),
     );
     Animated.parallel(animations).start();
   }, []);
@@ -268,7 +312,7 @@ export default function InboxScreen() {
     // Mark as read when opened
     // TODO: call markNotificationRead(userId, token, item.id) when API is ready
     setNotifications((prev) =>
-      prev.map((n) => (n.id === item.id ? { ...n, read: true } : n))
+      prev.map((n) => (n.id === item.id ? { ...n, read: true } : n)),
     );
     setSelectedNotification({ ...item, read: true });
   };
@@ -289,8 +333,22 @@ export default function InboxScreen() {
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const initials = `${userData?.first_name?.[0] ?? ""}${userData?.last_name?.[0] ?? ""}`.toUpperCase();
-
+  const getInitials = (userData: any) => {
+    if (!userData) return "U";
+    const first = userData.first_name || userData.firstName || "";
+    const last = userData.last_name || userData.lastName || "";
+    if (first || last) {
+      return ((first.charAt(0) || "") + (last.charAt(0) || "")).toUpperCase();
+    }
+    if (userData.name) {
+      const parts = userData.name.split(" ");
+      return (
+        (parts[0]?.charAt(0) || "") + (parts[1]?.charAt(0) || "")
+      ).toUpperCase();
+    }
+    // last fallback: just return "U" for user
+    return "U";
+  };
   const renderEmpty = () => (
     <View style={styles.emptyState}>
       <MaterialCommunityIcons name="inbox-outline" size={80} color="#CCCCCC" />
@@ -310,7 +368,10 @@ export default function InboxScreen() {
       {/* Header */}
       <View style={styles.topBanner}>
         <View style={styles.headerContent}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
             <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
           </TouchableOpacity>
 
@@ -323,9 +384,12 @@ export default function InboxScreen() {
             )}
           </View>
 
-          <TouchableOpacity onPress={() => router.push("/(app)/profile" as any)} style={styles.headerRight}>
+          <TouchableOpacity
+            onPress={() => router.push("/(app)/profile" as any)}
+            style={styles.headerRight}
+          >
             <View style={styles.profileInitials}>
-              <Text style={styles.profileText}>{initials}</Text>
+              <Text style={styles.profileText}>{getInitials(userData)}</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -344,13 +408,17 @@ export default function InboxScreen() {
               activeOpacity={0.75}
               style={[
                 styles.filterChip,
-                activeFilter === filter ? styles.filterChipActive : styles.filterChipInactive,
+                activeFilter === filter
+                  ? styles.filterChipActive
+                  : styles.filterChipInactive,
               ]}
             >
               <Text
                 style={[
                   styles.filterChipText,
-                  activeFilter === filter ? styles.filterChipTextActive : styles.filterChipTextInactive,
+                  activeFilter === filter
+                    ? styles.filterChipTextActive
+                    : styles.filterChipTextInactive,
                 ]}
               >
                 {filter}
@@ -367,7 +435,9 @@ export default function InboxScreen() {
         renderItem={({ item }) => (
           <NotificationCard
             item={item}
-            animValue={animValues[MOCK_NOTIFICATIONS.findIndex((n) => n.id === item.id)]}
+            animValue={
+              animValues[MOCK_NOTIFICATIONS.findIndex((n) => n.id === item.id)]
+            }
             onPress={openNotification}
           />
         )}
@@ -402,7 +472,11 @@ export default function InboxScreen() {
             <View style={styles.navSpacer} />
 
             <TouchableOpacity style={styles.navButton} activeOpacity={0.7}>
-              <MaterialCommunityIcons name="inbox-outline" size={32} color="#C4161C" />
+              <MaterialCommunityIcons
+                name="inbox-outline"
+                size={32}
+                color="#C4161C"
+              />
               <Text style={styles.navLabelActive}>Inbox</Text>
             </TouchableOpacity>
           </View>
