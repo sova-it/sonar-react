@@ -53,7 +53,7 @@ const UserManagerScreen = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await api.get("/public/users");
+      const res = await api.get("/users");
         setUsers(res.data.users || []);
     } catch (err) {
       console.error("Failed to fetch users", err);
