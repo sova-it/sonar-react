@@ -45,7 +45,7 @@ const EventSelectionScreen = () => {
       try {
         setLoading(true);
         const subeventsRes = await api.get('public/events-with-subevents');
-
+        
         let subevents: Subevent[] = [];
         for (const event of subeventsRes.data.events || []){
           if (event?.subevents?.length >0){
@@ -55,7 +55,6 @@ const EventSelectionScreen = () => {
             }))]
           }
         }
-        
         // Combine both events and subevents
         setAllEvents([...subevents]);
         setError(null);
