@@ -1,0 +1,145 @@
+###############################################################################
+# HANDOFF NOTES — READ BEFORE ENABLING THIS WORKFLOW
+#
+# This workflow builds the React/Expo web app Docker image and pushes it to
+# Azure Container Registry (ACR). It is intentionally left with placeholder
+# values that must be filled in before it will run successfully.
+#
+# PREREQUISITES — complete all of these before enabling the workflow:
+#
+# 1. Create an Azure Container Registry
+#    - In the Azure Portal, create an ACR instance (e.g. "sonarregistry").
+#    - Note the Login Server value (e.g. sonarregistry.azurecr.io).
+#    - Replace REPLACE_WITH_YOUR_REGISTRY_NAME.azurecr.io everywhere below
+#      with that Login Server value.
+#
+# 2. Create a Service Principal for GitHub to authenticate with ACR
+#    Run this in Azure CLI (replace <acr-resource-id> with your ACR's full
+#    resource ID from `az acr show --name <registry> --query id`):
+#
+#      az ad sp create-for-rbac \
+#        --name "github-sonar-acr" \
+#        --role AcrPush \
+#        --scopes <acr-resource-id> \
+#        --sdk-auth
+#
+#    This outputs a JSON block — save it; you will need it in step 3.
+#
+# 3. Add GitHub repository secrets
+#    Go to: GitHub repo → Settings → Secrets and variables → Actions → New secret
+#
+#    AZURE_CREDENTIALS   — the full JSON output from step 2
+#    ACR_USERNAME        — the "clientId" field from the JSON in step 2
+#    ACR_PASSWORD        — the "clientSecret" field from the JSON in step 2
+#    API_HOST            — hostname of the backend API that nginx will proxy to
+#                          (e.g. my-backend.azurewebsites.net)
+#                          This is passed as a Docker build arg and baked into
+#                          the nginx config at build time (see Dockerfile).
+#
+# 4. (Optional) Deploy after push
+#    After the image is in ACR you will need a separate step (or workflow) to
+#    deploy it to Azure Container Apps or Azure App Service. A commented-out
+#    stub is included at the bottom of this file as a starting point.
+#
+# 5. Enable the workflow
+#    Remove or edit the `workflow_dispatch` trigger below and un-comment the
+#    `push` trigger so it fires automatically on merges to main.
+###############################################################################
+
+name: Build and Push to ACR
+
+on:
+  # HANDOFF: Change this to the trigger that fits your release process.
+  # The workflow_dispatch trigger means it can only be run manually from the
+  # GitHub Actions UI. Un-comment the push trigger below to run it automatically.
+  workflow_dispatch:
+
+  # HANDOFF: Un-comment the block below to trigger on every push to main.
+  # push:
+  #   branches:
+  #     - main
+
+env:
+  # HANDOFF: Replace with your ACR Login Server (e.g. sonarregistry.azurecr.io).
+  ACR_LOGIN_SERVER: REPLACE_WITH_YOUR_REGISTRY_NAME.azurecr.io
+
+  # HANDOFF: This is the image name that will be stored in ACR.
+  # Change it if you want a different name (lowercase, no spaces).
+  IMAGE_NAME: sonar-react
+
+jobs:
+  build-and-push:
+    name: Build Docker image and push to ACR
+    runs-on: ubuntu-latest
+
+    steps:
+      # -----------------------------------------------------------------------
+      # 1. Check out the repository
+      # -----------------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # -----------------------------------------------------------------------
+      # 2. Log in to Azure using the service principal credentials stored as
+      #    the AZURE_CREDENTIALS secret (see HANDOFF NOTES step 2-3 above).
+      # -----------------------------------------------------------------------
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # -----------------------------------------------------------------------
+      # 3. Authenticate Docker with ACR.
+      #    ACR_USERNAME and ACR_PASSWORD must be added as GitHub secrets
+      #    (see HANDOFF NOTES step 3).
+      # -----------------------------------------------------------------------
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      # -----------------------------------------------------------------------
+      # 4. Set a short Git SHA tag so each image push is uniquely identifiable.
+      #    The image will be tagged both with the SHA and with "latest".
+      # -----------------------------------------------------------------------
+      - name: Set image tag
+        id: meta
+        run: echo "sha_tag=${GITHUB_SHA::8}" >> "$GITHUB_OUTPUT"
+
+      # -----------------------------------------------------------------------
+      # 5. Build the Docker image.
+      #    API_HOST is a build arg consumed by the Dockerfile and baked into
+      #    the nginx template (see nginx.conf and Dockerfile for details).
+      #    It must be set as the API_HOST secret (see HANDOFF NOTES step 3).
+      # -----------------------------------------------------------------------
+      - name: Build Docker image
+        run: |
+          docker build \
+            --build-arg API_HOST=${{ secrets.API_HOST }} \
+            --tag ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.sha_tag }} \
+            --tag ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest \
+            .
+
+      # -----------------------------------------------------------------------
+      # 6. Push both tags to ACR.
+      # -----------------------------------------------------------------------
+      - name: Push Docker image to ACR
+        run: |
+          docker push ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.sha_tag }}
+          docker push ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
+
+      # -----------------------------------------------------------------------
+      # HANDOFF: Optional deployment step (stub — not yet wired up).
+      #
+      # After the image is in ACR, add a deploy step here. Two common options:
+      #
+      # Azure Container Apps:
+      #   - uses: azure/container-apps-deploy-action@v1
+      #     with:
+      #       acrName: REPLACE_WITH_YOUR_REGISTRY_NAME
+      #       containerAppName: sonar-react-app
+      #       resourceGroup: REPLACE_WITH_YOUR_RESOURCE_GROUP
+      #       imageToDeploy: ${{ env.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.sha_tag }}
+      # -----------------------------------------------------------------------
