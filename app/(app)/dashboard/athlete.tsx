@@ -12,6 +12,7 @@ import {
   Image,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -199,6 +200,12 @@ const AthleteDashboard = () => {
       label: "Results",
       onPress: () => router.push("/(app)/results/event-selection" as any),
     },
+    {
+      icon: "image",
+      localImage: require("../../../assets/images/tennispixel.png"),
+      label: "Athletes",
+      onPress: () => router.push("/(app)/ManageAthletes"),
+    },
   ];
 
   const TennisIcon = () => (
@@ -272,6 +279,93 @@ const AthleteDashboard = () => {
                   <Ionicons name="person-outline" size={18} color="#000000" />
                 )}
               </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+
+      <ScrollView
+        style={styles.scrollContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.section}>
+          <View style={styles.buttonGrid}>
+            {navigationButtons.map((button, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.navigationButton}
+                onPress={button.onPress}
+                activeOpacity={0.7}
+              >
+                {button.localImage ? (
+                  <Image
+                    source={button.localImage}
+                    style={{ width: 48, height: 48, resizeMode: "contain" }}
+                  />
+                ) : (
+                  <MaterialIcons name={button.icon!} size={48} color="#000" />
+                )}
+                <Text style={styles.navigationButtonLabel}>{button.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Your upcoming events</Text>
+          <View style={styles.eventsContainer}>
+            {upcomingEvents.length === 0 ? (
+              <View style={styles.noEventsContainer}>
+                <Ionicons name="calendar-outline" size={48} color="#999" />
+                <Text style={styles.noEventsText}>No upcoming events</Text>
+              </View>
+            ) : (
+              upcomingEvents.map((event) => (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  onPress={() => openDetails(event)}
+                />
+              ))
+            )}
+          </View>
+        </View>
+
+        <View style={styles.bottomSpacing} />
+      </ScrollView>
+
+      <View style={styles.bottomNavContainer}>
+        <View style={styles.profilePictureOverlay}>
+          <View style={styles.profilePicture}>
+            <Pressable onPress={() => router.push("/(app)/dashboard/events")}>
+              <Image
+                source={require("../../../assets/images/events.png")}
+                style={styles.profileImage}
+              />
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.bottomNav}>
+          <View style={styles.navContent}>
+            <TouchableOpacity style={styles.navButton} activeOpacity={0.7}>
+              <Ionicons name="home-outline" size={32} color="#C4161C" />
+              <Text style={styles.navLabel}>Home</Text>
+            </TouchableOpacity>
+
+            <View style={styles.navSpacer} />
+
+            <TouchableOpacity
+              style={styles.navButton}
+              activeOpacity={0.7}
+              onPress={() => router.push("/(app)/inbox" as any)}
+            >
+              <MaterialCommunityIcons
+                name="inbox-outline"
+                size={32}
+                color="#888888"
+              />
+              <Text style={[styles.navLabel, { color: "#888888" }]}>Inbox</Text>
             </TouchableOpacity>
           </View>
         </View>
