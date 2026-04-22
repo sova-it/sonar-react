@@ -12,7 +12,6 @@ import {
   Image,
   Pressable,
   SafeAreaView,
-  ScrollView,
   StatusBar,
   StyleSheet,
   Text,
@@ -101,14 +100,14 @@ const AthleteDashboard = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const response = await api.get("/public/events-with-subevents");
+        const response = await api.get(`/users/${userId}/events`);
 
         const defaultImageUrl =
           "https://api.builder.io/api/v1/image/assets/TEMP/d657c7793a39131a1442e864a26a553b086c478b?width=720";
 
-        const events = Array.isArray(response.data?.events)
-          ? response.data.events
-          : [];
+        const events = Array.isArray(response.data)
+          ? response.data
+          : response.data?.events || [];
 
         const computeStatus = (item: any) => {
           const startRaw = item.start_time ?? item.startTime;
@@ -150,21 +149,8 @@ const AthleteDashboard = () => {
           ),
         });
 
-        const combined = events.flatMap((event: any) => {
-          const normalizedEvent = normalize(event);
-
-          const subevents = (event.subevents || []).map((sub: any) =>
-            normalize({
-              ...sub,
-              title: sub.title || event.title,
-              sport: sub.sport || event.sport,
-            }),
-          );
-
-          return [normalizedEvent, ...subevents];
-        });
-
-        const upcomingOnly = combined
+        const upcomingOnly = events
+          .map(normalize)
           .filter((ev: any) => ev.status?.toLowerCase() === "upcoming")
           .sort(
             (a: any, b: any) =>

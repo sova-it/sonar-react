@@ -1,7 +1,12 @@
 import api from "@/lib/api";
 import { Ionicons } from "@expo/vector-icons";
+import { Buffer } from "buffer";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import * as ImageManipulator from "expo-image-manipulator";
+import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
+import { decode as decodeJpeg } from "jpeg-js";
+import jsQR from "jsqr";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -24,6 +29,87 @@ export default function QrLogin() {
 
   const tRef1 = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tRef2 = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const extractQRFromImage = async (uri: string): Promise<string | null> => {
+    try {
+      // 1. Resize + convert to JPEG + get base64
+      const manipulated = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width: 500 } }], // smaller = faster, 500px is enough for QR
+        {
+          format: ImageManipulator.SaveFormat.JPEG,
+          base64: true,
+          compress: 0.9,
+        },
+      );
+
+      if (!manipulated.base64) return null;
+
+      // 2. Decode base64 JPEG → raw RGBA pixel data
+      const rawBytes = Buffer.from(manipulated.base64, "base64");
+      const { data, width, height } = decodeJpeg(rawBytes, {
+        useTArray: true, // returns Uint8Array instead of Buffer
+      });
+
+      // 3. jsQR expects Uint8ClampedArray
+      const clampedData = new Uint8ClampedArray(data.buffer);
+
+      // 4. Decode QR
+      const result = jsQR(clampedData, width, height, {
+        inversionAttempts: "attemptBoth", // handles inverted QR codes too
+      });
+
+      return result?.data ?? null;
+    } catch (err) {
+      console.warn("QR extraction failed:", err);
+      return null;
+    }
+  };
+
+  const handleUploadQR = async () => {
+    try {
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 1,
+      });
+
+      if (res.canceled) return;
+
+      setPhase("loading");
+
+      const image = res.assets[0];
+      const qrValue = await extractQRFromImage(image.uri);
+
+      if (!qrValue) {
+        setResultMessage("Could not read QR code from image.");
+        setPhase("error");
+        return;
+      }
+
+      const response = await api.post("/auth/qr-login", {
+        qr_value: qrValue,
+      });
+
+      const result = response.data;
+
+      await setAuth({
+        role: result.user.role,
+        userId: result.user.id,
+        userData: result.user,
+        token: result.session_token || "qr-temp-token",
+      });
+
+      setResultMessage("Logged in successfully");
+      setPhase("confirm");
+
+      setTimeout(() => {
+        router.replace("/dashboard");
+      }, 2000);
+    } catch (err) {
+      setResultMessage("Could not process image.");
+      setPhase("error");
+    }
+  };
 
   const onBarcodeScanned = useCallback(
     async ({ data }: { data: string; type: string }) => {
@@ -200,6 +286,13 @@ export default function QrLogin() {
           </View>
         </View>
       )}
+
+      <View style={styles.bottomContainer}>
+        <Pressable style={styles.uploadBtn} onPress={handleUploadQR}>
+          <Ionicons name="image-outline" size={20} color="#fff" />
+          <Text style={styles.uploadText}>Upload QR Code</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -310,5 +403,30 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: "center",
     marginBottom: 6,
+  },
+  bottomContainer: {
+    position: "absolute",
+    bottom: 40,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+  },
+
+  uploadBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#666",
+  },
+
+  uploadText: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "600",
   },
 });

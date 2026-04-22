@@ -123,9 +123,22 @@ export default function EventDetails() {
       }) ?? []
     );
   }, [participants, selectedRole]);
-  const initials = userData
-    ? `${userData?.first_name?.[0] ?? ""}${userData?.last_name?.[0] ?? ""}`.toUpperCase()
-    : "";
+  const getInitials = (userData: any) => {
+    if (!userData) return "U";
+    const first = userData.first_name || userData.firstName || "";
+    const last = userData.last_name || userData.lastName || "";
+    if (first || last) {
+      return ((first.charAt(0) || "") + (last.charAt(0) || "")).toUpperCase();
+    }
+    if (userData.name) {
+      const parts = userData.name.split(" ");
+      return (
+        (parts[0]?.charAt(0) || "") + (parts[1]?.charAt(0) || "")
+      ).toUpperCase();
+    }
+    // last fallback: just return "U" for user
+    return "U";
+  };
 
   const conf: SportConf =
     sportConfig[(sport || "").toLowerCase()] ??
@@ -164,7 +177,9 @@ export default function EventDetails() {
             >
               <View style={styles.profileInitials}>
                 {userData ? (
-                  <Text style={styles.profileText}>{initials}</Text>
+                  <Text style={styles.profileText}>
+                    {getInitials(userData)}
+                  </Text>
                 ) : (
                   <Ionicons name="person-outline" size={18} color="#000000" />
                 )}

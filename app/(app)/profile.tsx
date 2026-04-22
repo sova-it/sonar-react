@@ -29,7 +29,7 @@ const ProfileScreen = () => {
     router.push("/");
   };
 
-  if (!isReady) {
+  if (!isReady || !userData) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
         <Text>Loading...</Text>
@@ -79,7 +79,10 @@ const ProfileScreen = () => {
           </Text>
 
           <Text style={styles.roleText}>
-            ({userData.pronouns || ""}) | {userData.role || ""}
+            ({userData.pronouns || ""}) |{" "}
+            {userData.role
+              ? userData.role.charAt(0).toUpperCase() + userData.role.slice(1)
+              : ""}
           </Text>
 
           <Text style={styles.memberId}>

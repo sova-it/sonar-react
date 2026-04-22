@@ -1,13 +1,18 @@
 import { Ionicons } from "@expo/vector-icons";
+import { Buffer } from "buffer";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import * as ImageManipulator from "expo-image-manipulator";
+import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { decode as decodeJpeg } from "jpeg-js";
+import jsQR from "jsqr";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { useAuth } from "../../../context/auth";
 
@@ -27,6 +32,66 @@ export default function QrScannerScreen() {
   const tRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const EVENT_ID = "6877b78987459c2e6d0409e7"; // Summer Games 2025
+
+  const extractQRFromImage = async (uri: string): Promise<string | null> => {
+    try {
+      const manipulated = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width: 500 } }],
+        {
+          format: ImageManipulator.SaveFormat.JPEG,
+          base64: true,
+          compress: 0.9,
+        },
+      );
+
+      if (!manipulated.base64) return null;
+
+      const rawBytes = Buffer.from(manipulated.base64, "base64");
+      const { data, width, height } = decodeJpeg(rawBytes, {
+        useTArray: true,
+      });
+
+      const clampedData = new Uint8ClampedArray(data.buffer);
+
+      const result = jsQR(clampedData, width, height, {
+        inversionAttempts: "attemptBoth",
+      });
+
+      return result?.data ?? null;
+    } catch (err) {
+      console.warn("QR extraction failed:", err);
+      return null;
+    }
+  };
+
+  const handleUploadQR = async () => {
+    try {
+      const res = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 1,
+      });
+
+      if (res.canceled) return;
+
+      setPhase("loading");
+
+      const image = res.assets[0];
+      const qrValue = await extractQRFromImage(image.uri);
+
+      if (!qrValue) {
+        setResultMessage("Could not read QR code from image.");
+        setPhase("error");
+        return;
+      }
+
+      // reuse your existing scan logic
+      onBarcodeScanned({ data: qrValue, type: "qr" });
+    } catch (err) {
+      setResultMessage("Could not process image.");
+      setPhase("error");
+    }
+  };
 
   const onBarcodeScanned = useCallback(
     async ({ data }: { data: string; type: string }) => {
@@ -75,7 +140,7 @@ export default function QrScannerScreen() {
             setResultMessage(
               json?.detail ||
                 json?.message ||
-                "Error checking in. Please try again."
+                "Error checking in. Please try again.",
             );
             setPhase("error");
           }
@@ -88,7 +153,7 @@ export default function QrScannerScreen() {
         }, 2000);
       }
     },
-    [scanned, phase, performerId, subevent_id]
+    [scanned, phase, performerId, subevent_id],
   );
 
   useEffect(() => {
@@ -158,7 +223,9 @@ export default function QrScannerScreen() {
 
       <View style={styles.focusBoxContainer} pointerEvents="none">
         <View style={styles.focusBox} />
-        <Text style={styles.helperText}>Align the QR code within the frame</Text>
+        <Text style={styles.helperText}>
+          Align the QR code within the frame
+        </Text>
       </View>
 
       {phase === "loading" && (
@@ -194,7 +261,9 @@ export default function QrScannerScreen() {
       {phase === "error" && (
         <View style={styles.overlay} pointerEvents="auto">
           <View style={styles.card}>
-            <Text style={[styles.cardTitle, { color: "#ff4d4d" }]}>Error ❌</Text>
+            <Text style={[styles.cardTitle, { color: "#ff4d4d" }]}>
+              Error ❌
+            </Text>
             <Text style={styles.cardSubtitle}>{resultMessage}</Text>
 
             <Pressable
@@ -213,6 +282,35 @@ export default function QrScannerScreen() {
           </View>
         </View>
       )}
+      <View
+        style={{
+          position: "absolute",
+          bottom: 40,
+          left: 0,
+          right: 0,
+          alignItems: "center",
+        }}
+      >
+        <Pressable
+          onPress={handleUploadQR}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+            backgroundColor: "rgba(0,0,0,0.6)",
+            paddingHorizontal: 16,
+            paddingVertical: 12,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: "#666",
+          }}
+        >
+          <Ionicons name="image-outline" size={20} color="#fff" />
+          <Text style={{ color: "#fff", fontWeight: "600" }}>
+            Upload QR Code
+          </Text>
+        </Pressable>
+      </View>
     </View>
   );
 }

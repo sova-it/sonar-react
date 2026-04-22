@@ -37,7 +37,7 @@ const computeStatus = (item: any): string => {
 };
 
 const EventScreen = () => {
-  const { userId } = useAuth();
+  const { userId, userData } = useAuth();
   const statuses = userId
     ? ["all", "ongoing", "upcoming", "completed", "my_events"]
     : ["all", "ongoing", "upcoming", "completed"];
@@ -49,23 +49,43 @@ const EventScreen = () => {
 
   // Fetch user-specific events
   useEffect(() => {
+    if (!userId) return;
+
     const fetchUserEvents = async () => {
       try {
-        const response = await api.get("/users/" + userId + "/events");
+        const response = await api.get("/events");
+        const allEvents = response.data.events || [];
+
         const defaultImageUrl =
           "https://api.builder.io/api/v1/image/assets/TEMP/d657c7793a39131a1442e864a26a553b086c478b?width=720";
-        const list = Array.isArray(response.data?.events)
-          ? response.data.events
-          : [];
-        setEventData(
-          list.map((ev: any) => ({
-            ...ev,
-            id: String(ev.id ?? ev._id),
-            imageUrl: ev.imageUrl || defaultImageUrl,
-            sportCategory: ev.sportCategory || "General",
-            status: computeStatus(ev),
-          })),
-        );
+
+        const userEvents: any[] = [];
+
+        for (const event of allEvents) {
+          try {
+            const res = await api.get(`/events/${event._id}/participants`);
+            const participants = res.data.items || [];
+
+            const isUserInEvent = participants.some(
+              (p: any) => p.email === userData?.email,
+            );
+
+            if (isUserInEvent) {
+              userEvents.push({
+                ...event,
+                id: String(event._id || event.id || ""),
+                imageUrl: event.imageUrl || defaultImageUrl,
+                sportCategory: event.sportCategory || "General",
+                status: computeStatus(event),
+                sport: event.sport || event.title,
+                participants: event.participants || 0,
+                startTime: event.start_time || event.startTime,
+              });
+            }
+          } catch (err) {}
+        }
+
+        setEventData(userEvents);
       } catch (error) {
         console.error(error);
       }
