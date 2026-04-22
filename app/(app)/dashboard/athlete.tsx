@@ -12,6 +12,7 @@ import {
   Image,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StatusBar,
   StyleSheet,
   Text,

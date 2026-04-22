@@ -3,17 +3,17 @@ import { Feather, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import React, { useEffect, useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    Dimensions,
-    FlatList,
-    Image,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Dimensions,
+  FlatList,
+  Image,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { useAuth } from "../../context/auth";
 
@@ -75,25 +75,11 @@ const AthleteManagerScreen = () => {
   }, [users, searchTerm]);
 
   const renderUser = ({ item }: { item: any }) => {
-    const placeholderEmail =
-      `${item.last_name}@yahoo.com`.toLowerCase();
-    const placeholderDOB = "01/01/1999";
-    const placeholderPronouns = "They/Them";
-    const placeholderGuardianName = "John Doe";
-    const placeholderEvent = "100m sprint";
-
     return (
       <TouchableOpacity
         style={styles.userCard}
         onPress={() => {
-          setSelectedUser({
-            ...item,
-            email: placeholderEmail,
-            dob: placeholderDOB,
-            pronouns: placeholderPronouns,
-            guardian_name: placeholderGuardianName,
-            event: placeholderEvent,
-          });
+          setSelectedUser(item);
           fetchAthleteEvents(item._id);
         }}
       >
@@ -201,14 +187,12 @@ const AthleteManagerScreen = () => {
                 Member ID: {selectedUser?.member_id}
               </Text>
               <Text style={styles.modalInfo}>Email: {selectedUser?.email}</Text>
-              <Text style={styles.modalInfo}>DOB: {selectedUser?.dob}</Text>
               <Text style={styles.modalInfo}>
                 Pronouns: {selectedUser?.pronouns}
               </Text>
               <Text style={styles.modalInfo}>
                 Guardian Name: {selectedUser?.guardian_name}
               </Text>
-          
 
               {/* EVENT(S) SECTION */}
               <Text style={[styles.modalTitle, { marginTop: 20 }]}>
@@ -219,9 +203,13 @@ const AthleteManagerScreen = () => {
                 <ActivityIndicator size="small" color="#C4161C" />
               ) : athleteEvents.length === 0 ? (
                 <Text
-                  style={{ textAlign: "center", marginTop: 10, color: "#C4161C" }}
+                  style={{
+                    textAlign: "center",
+                    marginTop: 10,
+                    color: "#C4161C",
+                  }}
                 >
-                  100m Sprint
+                  No events found for this athlete.
                 </Text>
               ) : (
                 athleteEvents.map((event) => (
