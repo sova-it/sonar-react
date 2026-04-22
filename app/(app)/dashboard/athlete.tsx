@@ -355,7 +355,11 @@ const AthleteDashboard = () => {
 
             <View style={styles.navSpacer} />
 
-            <TouchableOpacity style={styles.navButton} activeOpacity={0.7} onPress = {() => router.push("/(app)/inbox" as any)}>
+            <TouchableOpacity
+              style={styles.navButton}
+              activeOpacity={0.7}
+              onPress={() => router.push("/(app)/inbox" as any)}
+            >
               <MaterialCommunityIcons
                 name="inbox-outline"
                 size={32}
