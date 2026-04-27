@@ -1,6 +1,6 @@
 import api from "@/lib/api";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../../../context/auth";
 
 import {
@@ -101,7 +101,7 @@ const AthleteDashboard = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const response = await api.get(`/users/${userId}/events`);
+        const response = await api.get(`/public/events-with-subevents`);
 
         const defaultImageUrl =
           "https://api.builder.io/api/v1/image/assets/TEMP/d657c7793a39131a1442e864a26a553b086c478b?width=720";
